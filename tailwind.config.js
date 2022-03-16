@@ -5,7 +5,11 @@ module.exports = {
     'node_modules/@yext/answers-react-components/lib/components/**/*.js',
   ],
   theme: {
-    extend: {},
+    extend: {
+      fontFamily: {
+        primary: ['Inter'],
+      },
+    },
   },
   plugins: [
     require('@tailwindcss/forms')({

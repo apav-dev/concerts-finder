@@ -1,10 +1,10 @@
 import './App.css';
 import { AnswersHeadlessProvider } from '@yext/answers-headless-react';
-import { SearchBar } from '@yext/answers-react-components';
+import EventsMap from './components/EventsMap';
 
 function App() {
   return (
-    <div className="App">
+    <div className="font-primary">
       <AnswersHeadlessProvider
         apiKey="a1a498f3b492b925ab84f69d27fedf9c"
         experienceKey="concerts-finder"
@@ -23,9 +23,7 @@ function App() {
           filterSearch: 'https://liveapi-sandbox.yext.com/v2/accounts/me/answers/filtersearch',
         }}
       >
-        <div className="m-6">
-          <SearchBar />
-        </div>
+        <EventsMap />
       </AnswersHeadlessProvider>
     </div>
   );
