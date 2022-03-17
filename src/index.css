@@ -3,6 +3,11 @@
   src: url(./fonts/Inter-VariableFont.ttf);
 }
 
+@font-face {
+  font-family: 'MavenPro';
+  src: url(./fonts/MavenPro-VariableFont_wght.ttf);
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
