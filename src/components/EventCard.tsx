@@ -4,6 +4,9 @@ import {
   isString,
   validateData,
 } from '@yext/answers-react-components/lib/components/utils/validateData';
+import { useState } from 'react';
+import { BiCaretUpCircle } from 'react-icons/bi';
+import classNames from 'classnames';
 
 export interface YextTimeData {
   start: string;
@@ -81,7 +84,11 @@ const eventFieldMappings: Record<string, FieldData> = {
   },
 };
 
+type DrawerState = 'none' | 'open' | 'closed';
+
 const EventCard = (props: StandardCardProps): JSX.Element => {
+  const [drawerState, setDrawerState] = useState<DrawerState>('none');
+
   const transformedFieldData = applyFieldMappings(props.result.rawData, eventFieldMappings);
 
   const data = validateData(transformedFieldData, {
@@ -178,9 +185,27 @@ const EventCard = (props: StandardCardProps): JSX.Element => {
         {renderArtistCard()}
         {renderArtistCard()}
       </div> */}
-      {/* <div className="flex justify-center">
-        <button>Performers</button>
-      </div> */}
+      <div className="w-full flex justify-center">
+        <button
+          className="flex justify-center items-center space-x-1 text-sm group"
+          onClick={() => {
+            if (drawerState === 'none' || drawerState === 'closed') {
+              setDrawerState('open');
+            } else {
+              setDrawerState('closed');
+            }
+          }}
+        >
+          <span>View Artists</span>
+          <BiCaretUpCircle
+            className={classNames(
+              { 'transition duration-700 transform rotate-180': drawerState === 'open' },
+              { 'transition duration-700 transform rotate-360': drawerState === 'closed' }
+            )}
+            size={16}
+          />
+        </button>
+      </div>
     </div>
   );
 };
