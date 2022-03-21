@@ -7,7 +7,7 @@ import {
 import { useState } from 'react';
 import { BiCaretUpCircle } from 'react-icons/bi';
 import classNames from 'classnames';
-import ArtistCard, { Artist, isArtistData } from './ArtistCard';
+import ArtistItem, { Artist, isArtistData } from './ArtistItem';
 
 export interface YextTimeData {
   start: string;
@@ -157,19 +157,22 @@ const EventCard = (props: StandardCardProps): JSX.Element => {
           </div>
         </div>
       </div>
-      {drawerState === 'open' && (
-        <div
-          className="transition-height duration-500 ease-in-out 
-        "
-        >
-          {data.artists?.map((artist, i) => (
-            <ArtistCard key={i} artist={artist} />
-          ))}
-        </div>
-      )}
+      <ul
+        className={classNames(
+          { 'max-h-64 overflow-hidden': drawerState === 'open' },
+          { 'max-h-0 overflow-hidden': drawerState === 'closed' || drawerState === 'none' }
+        )}
+        //TODO: remove inline style
+        style={{ transition: 'max-height 0.5s linear' }}
+      >
+        {data.artists?.slice(0, 4).map((artist, i) => (
+          <ArtistItem key={i} artist={artist} />
+        ))}
+      </ul>
       <div className="w-full flex justify-center">
         <button
           className="flex justify-center items-center space-x-1 text-sm group"
+          //TODO: remove inline style
           style={{ color: '#ee4c7c' }}
           onClick={() => {
             if (drawerState === 'none' || drawerState === 'closed') {

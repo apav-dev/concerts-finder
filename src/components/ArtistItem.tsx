@@ -22,17 +22,19 @@ export interface ArtistCardProps {
   artist: Artist;
 }
 
-const ArtistCard = ({ artist }: ArtistCardProps): JSX.Element => {
+const ArtistItem = ({ artist }: ArtistCardProps): JSX.Element => {
   return (
-    <div className="flex justify-between items-center shadow-lg  bg-cardGray my-2 px-2">
-      <span className="flex text-xs ">{artist.name}</span>
-      <img
-        className="h-auto shadow-sm my-2"
-        style={{ maxWidth: '3rem' }}
-        src="https://a.mktgcdn.com/p-sandbox/xY62xntuL3mgAB5uwDy8fJ1sHL0TEo18lRHbqJ7s-PE/280x210.jpg"
-      />
-    </div>
+    <li className="bg-cardGray shadow-lg my-2 px-2">
+      <div className="flex justify-between items-center">
+        <span className="flex text-xs ">{artist.name}</span>
+        <img
+          className="h-auto shadow-sm my-2"
+          style={{ maxWidth: '3rem' }}
+          src="https://a.mktgcdn.com/p-sandbox/xY62xntuL3mgAB5uwDy8fJ1sHL0TEo18lRHbqJ7s-PE/280x210.jpg"
+        />
+      </div>
+    </li>
   );
 };
 
-export default ArtistCard;
+export default ArtistItem;
