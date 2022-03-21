@@ -7,6 +7,7 @@ import {
 import { useState } from 'react';
 import { BiCaretUpCircle } from 'react-icons/bi';
 import classNames from 'classnames';
+import ArtistCard, { Artist, isArtistData } from './ArtistCard';
 
 export interface YextTimeData {
   start: string;
@@ -22,23 +23,6 @@ export interface YextImageData {
 
 export interface YextPrimaryPhoto {
   photo: YextImageData;
-}
-
-export interface Artist {
-  name: string;
-  c_genres: string[];
-  primaryPhoto: YextPrimaryPhoto;
-}
-
-function isArtistData(data: unknown): data is Artist {
-  if (typeof data !== 'object' || data === null) {
-    return false;
-  }
-
-  const expectedKeys = ['name', 'c_genres', 'primaryPhoto'];
-  return expectedKeys.every((key) => {
-    return key in data;
-  });
 }
 
 function isImageData(data: unknown): data is YextImageData {
@@ -59,6 +43,14 @@ function isTimeData(data: unknown): data is YextTimeData {
   return expectedKeys.every((key) => {
     return key in data;
   });
+}
+
+function isArtists(data: unknown): data is Artist[] {
+  if (!Array.isArray(data) || data === null) {
+    return false;
+  }
+
+  return data.every((maybeArtist) => isArtistData(maybeArtist));
 }
 
 const eventFieldMappings: Record<string, FieldData> = {
@@ -96,8 +88,7 @@ const EventCard = (props: StandardCardProps): JSX.Element => {
     venueName: isString,
     dateTime: isTimeData,
     lowestPrice: isString,
-    // TODO: validate artists
-    // artists: () => true,
+    artists: isArtists,
   });
 
   const formatDate = (dateTime?: string) => {
@@ -151,24 +142,11 @@ const EventCard = (props: StandardCardProps): JSX.Element => {
     return `${month} ${date} · `;
   };
 
-  const renderArtistCard = () => {
-    return (
-      <div className="flex justify-between items-center">
-        <span className="flex text-xs ">Red Hot Chili Peppers</span>
-        <img
-          className="h-auto shadow-sm"
-          style={{ maxWidth: '3rem' }}
-          src="https://a.mktgcdn.com/p-sandbox/xY62xntuL3mgAB5uwDy8fJ1sHL0TEo18lRHbqJ7s-PE/280x210.jpg"
-        />
-      </div>
-    );
-  };
-
   return (
     <div className="border-b rounded-sm p-2 shadow-sm px-4">
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-center ">
         <div>
-          <div className="flex text-md font-black " style={{ color: '#ee4c7c' }}>
+          <div className="flex text-md" style={{ color: '#ee4c7c' }}>
             {data.title?.toUpperCase()}
           </div>
           <div>
@@ -179,15 +157,20 @@ const EventCard = (props: StandardCardProps): JSX.Element => {
           </div>
         </div>
       </div>
-      {/* <div className="max-h-32 overflow-y-auto">
-        {renderArtistCard()}
-        {renderArtistCard()}
-        {renderArtistCard()}
-        {renderArtistCard()}
-      </div> */}
+      {drawerState === 'open' && (
+        <div
+          className="transition-height duration-500 ease-in-out 
+        "
+        >
+          {data.artists?.map((artist, i) => (
+            <ArtistCard key={i} artist={artist} />
+          ))}
+        </div>
+      )}
       <div className="w-full flex justify-center">
         <button
           className="flex justify-center items-center space-x-1 text-sm group"
+          style={{ color: '#ee4c7c' }}
           onClick={() => {
             if (drawerState === 'none' || drawerState === 'closed') {
               setDrawerState('open');

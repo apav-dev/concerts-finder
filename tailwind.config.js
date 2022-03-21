@@ -17,6 +17,10 @@ module.exports = {
       colors: {
         backgroundGray: '#e3e2df',
         cardGray: '#ebebe9',
+        fontPink: '#ee4c7c',
+      },
+      transitionProperty: {
+        height: 'height',
       },
     },
   },
