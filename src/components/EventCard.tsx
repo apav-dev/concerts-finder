@@ -9,6 +9,16 @@ import { BiCaretUpCircle } from 'react-icons/bi';
 import classNames from 'classnames';
 import ArtistItem, { Artist, isArtistData } from './ArtistItem';
 
+export interface LinkedLocation {
+  name: string;
+  yextDisplayCoordinate: YextDisplayCoordinate;
+}
+
+export interface YextDisplayCoordinate {
+  longitude: number;
+  latitude: number;
+}
+
 export interface YextTimeData {
   start: string;
   end: string;
@@ -25,7 +35,7 @@ export interface YextPrimaryPhoto {
   photo: YextImageData;
 }
 
-function isImageData(data: unknown): data is YextImageData {
+export function isImageData(data: unknown): data is YextImageData {
   if (typeof data !== 'object' || data === null) {
     return false;
   }
@@ -35,7 +45,7 @@ function isImageData(data: unknown): data is YextImageData {
   });
 }
 
-function isTimeData(data: unknown): data is YextTimeData {
+export function isTimeData(data: unknown): data is YextTimeData {
   if (typeof data !== 'object' || data === null) {
     return false;
   }
@@ -53,7 +63,29 @@ function isArtists(data: unknown): data is Artist[] {
   return data.every((maybeArtist) => isArtistData(maybeArtist));
 }
 
-const eventFieldMappings: Record<string, FieldData> = {
+function isCoordinateData(data: unknown): data is YextDisplayCoordinate {
+  if (typeof data !== 'object' || data === null) {
+    return false;
+  }
+
+  const expectedKeys = ['longitude', 'latitude'];
+  return expectedKeys.every((key) => {
+    return key in data;
+  });
+}
+
+export function isLinkedLocation(data: unknown): data is LinkedLocation {
+  if (typeof data !== 'object' || data === null) {
+    return false;
+  }
+
+  const expectedKeys = ['name', 'yextDisplayCoordinate'];
+  return expectedKeys.every((key) => {
+    return key in data;
+  });
+}
+
+export const eventFieldMappings: Record<string, FieldData> = {
   title: {
     mappingType: 'FIELD',
     apiName: 'name',
@@ -73,6 +105,10 @@ const eventFieldMappings: Record<string, FieldData> = {
   lowestPrice: {
     mappingType: 'FIELD',
     apiName: 'c_lowestPrice',
+  },
+  linkedLocation: {
+    mappingType: 'FIELD',
+    apiName: 'linkedLocation',
   },
 };
 
