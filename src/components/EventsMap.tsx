@@ -1,7 +1,17 @@
 import { useRef, useEffect, useState } from 'react';
 import mapboxgl, { Map } from '!mapbox-gl'; // eslint-disable-line
-import { SearchIntent, useAnswersActions, useAnswersState } from '@yext/answers-headless-react';
-import { SearchBar, updateLocationIfNeeded, VerticalResults } from '@yext/answers-react-components';
+import {
+  Matcher,
+  SearchIntent,
+  useAnswersActions,
+  useAnswersState,
+} from '@yext/answers-headless-react';
+import {
+  SearchBar,
+  SpellCheck,
+  updateLocationIfNeeded,
+  VerticalResults,
+} from '@yext/answers-react-components';
 import MapLoadingScreen from './MapLoadingScreen';
 import EventCard, { eventFieldMappings, isLinkedLocation, isTimeData } from './EventCard';
 import classNames from 'classnames';
@@ -12,6 +22,7 @@ import {
 import { applyFieldMappings } from '@yext/answers-react-components/lib/components/utils/applyFieldMappings';
 import { GeoJSONSource } from 'mapbox-gl';
 import { BiCaretLeft } from 'react-icons/bi';
+import { distanceInKmBetweenCoordinates } from '../utils/utils';
 
 mapboxgl.accessToken =
   'pk.eyJ1IjoiYXBhdmxpY2siLCJhIjoiY2wwdHB6ZHh2MG4yZTNjcnAwa200cTRwNCJ9.p0t0lKsS4NDMZWvSIKyWbA';
@@ -21,10 +32,9 @@ const EventsMap = (): JSX.Element => {
   const map = useRef<Map | null>(null);
   const resultsContainer = useRef<HTMLDivElement>(null);
 
-  const [initialLoading, setInitialLoading] = useState(true);
   const [scrollAtTop, setScrollAtTop] = useState(true);
   const [showSearchPanel, setShowSearchPanel] = useState(true);
-  const [initialSearchComplete, setInitialSearchComplete] = useState(false);
+  const [setupDone, setSetupDone] = useState(false);
   const [lastSearchInput, setLastSearchInput] = useState('');
 
   const queryInput = useAnswersState((state) => state.query.input);
@@ -35,20 +45,11 @@ const EventsMap = (): JSX.Element => {
 
   useEffect(() => {
     updateLocationIfNeeded(answersActions, [SearchIntent.NearMe]);
-  }, []);
 
-  useEffect(() => {
-    if (initialLoading && map.current && userLocation) {
-      map.current.setCenter([userLocation.longitude, userLocation.latitude]);
-      setInitialLoading(false);
-    }
-  }, [userLocation]);
-
-  useEffect(() => {
     if (map.current) return; // initialize map only once
     map.current = new mapboxgl.Map({
       container: mapContainer.current || '',
-      style: 'mapbox://styles/mapbox/streets-v11',
+      style: 'mapbox://styles/apavlick/cl16myhmu000814rrpfrdisj2',
       interactive: true,
       zoom: 9,
       center: [-73.935242, 40.73061], // center is initally set to NYC
@@ -92,6 +93,34 @@ const EventsMap = (): JSX.Element => {
       );
     });
   }, []);
+
+  useEffect(() => {
+    if (map.current && userLocation) {
+      map.current.setCenter([userLocation.longitude, userLocation.latitude]);
+      answersActions.setStaticFilters([
+        {
+          fieldId: 'builtin.location',
+          selected: true,
+          matcher: Matcher.Near,
+          value: {
+            radius:
+              1000 *
+              distanceInKmBetweenCoordinates(
+                map.current.getCenter().lat,
+                map.current.getCenter().lng,
+                map.current.getBounds().getNorthEast().lat,
+                map.current.getCenter().lng
+              ),
+            lat: map.current.getCenter().lat as number,
+            lng: map.current.getCenter().lng as number,
+          },
+        },
+      ]);
+      answersActions.executeVerticalQuery();
+      setSetupDone(true);
+      answersActions.setStaticFilters([]);
+    }
+  }, [userLocation]);
 
   useEffect(() => {
     setLastSearchInput(queryInput || '');
@@ -141,7 +170,10 @@ const EventsMap = (): JSX.Element => {
 
       if (!bounds.isEmpty()) {
         map.current.setCenter(bounds.getCenter());
-        map.current.fitBounds(bounds);
+        map.current.fitBounds(bounds, {
+          padding: { top: 20, bottom: 20, left: 20, right: 20 },
+          maxZoom: 15,
+        });
       }
     }
   }, [events]);
@@ -151,13 +183,13 @@ const EventsMap = (): JSX.Element => {
 
   return (
     <div className="relative h-screen w-screen">
-      {initialLoading && <MapLoadingScreen />}
+      {!setupDone && <MapLoadingScreen />}
       <div ref={mapContainer} className="absolute top-0 bottom-0 w-full overflow-hidden">
         <div
           className={classNames(
             'absolute w-96  h-full bg-backgroundGray left-0',
             {
-              'bg-transparent': !initialSearchComplete,
+              'bg-transparent': !setupDone,
             },
             { 'left-0': showSearchPanel },
             { '-left-96': !showSearchPanel }
@@ -176,12 +208,6 @@ const EventsMap = (): JSX.Element => {
                 inputElement: 'outline-none flex-grow border-none h-full pl-0.5 pr-2 bg-cardGray',
               }}
               cssCompositionMethod="assign"
-              onSearch={() => {
-                if (!initialSearchComplete) {
-                  setInitialSearchComplete(true);
-                }
-                answersActions.executeVerticalQuery();
-              }}
             />
           </div>
           <div
@@ -190,23 +216,37 @@ const EventsMap = (): JSX.Element => {
             onScroll={handleResultsScroll}
           >
             {eventsCount > 0 && (
-              <VerticalResults CardComponent={EventCard} customCssClasses={{ container: 'p-4 ' }} />
+              <VerticalResults
+                CardComponent={EventCard}
+                customCssClasses={{ container: 'p-4' }}
+                allowPagination={true}
+              />
             )}
-            {eventsCount === 0 && initialSearchComplete && (
+            {eventsCount === 0 && setupDone && (
               <span className="px-4">{`No search results found for ${lastSearchInput}`}</span>
             )}
+            <SpellCheck
+              customCssClasses={{
+                container: 'text-md',
+                helpText: '',
+                link: 'text-fontPink font-bold hover:underline focus:underline',
+              }}
+              cssCompositionMethod="assign"
+            />
           </div>
-          <div className={'left-96 absolute top-0 bottom-0 flex flex-col justify-center '}>
-            <button
-              className="w-5 h-11 bg-backgroundGray rounded-r-md"
-              onClick={() => setShowSearchPanel(!showSearchPanel)}
-            >
-              <BiCaretLeft
-                className={classNames({ 'transform rotate-180': !showSearchPanel })}
-                size={16}
-              />
-            </button>
-          </div>
+          {setupDone && (
+            <div className={'left-96 absolute top-0 bottom-0 flex flex-col justify-center '}>
+              <button
+                className="w-5 h-11 bg-backgroundGray rounded-r-md"
+                onClick={() => setShowSearchPanel(!showSearchPanel)}
+              >
+                <BiCaretLeft
+                  className={classNames({ 'transform rotate-180': !showSearchPanel })}
+                  size={16}
+                />
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>
