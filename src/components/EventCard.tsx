@@ -199,8 +199,9 @@ const EventCard = (props: StandardCardProps): JSX.Element => {
           { 'max-h-0 overflow-hidden': drawerState === 'closed' || drawerState === 'none' }
         )}
         //TODO: remove inline style
-        style={{ transition: 'max-height 0.5s linear' }}
+        style={{ transition: 'max-height 0.2s linear' }}
       >
+        {/* TODO: paginate artists */}
         {data.artists?.slice(0, 4).map((artist, i) => (
           <ArtistItem key={i} artist={artist} />
         ))}

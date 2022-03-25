@@ -11,6 +11,7 @@ import {
 } from '@yext/answers-react-components/lib/components/utils/validateData';
 import { applyFieldMappings } from '@yext/answers-react-components/lib/components/utils/applyFieldMappings';
 import { GeoJSONSource } from 'mapbox-gl';
+import { BiCaretLeft } from 'react-icons/bi';
 
 mapboxgl.accessToken =
   'pk.eyJ1IjoiYXBhdmxpY2siLCJhIjoiY2wwdHB6ZHh2MG4yZTNjcnAwa200cTRwNCJ9.p0t0lKsS4NDMZWvSIKyWbA';
@@ -22,7 +23,11 @@ const EventsMap = (): JSX.Element => {
 
   const [initialLoading, setInitialLoading] = useState(true);
   const [scrollAtTop, setScrollAtTop] = useState(true);
+  const [showSearchPanel, setShowSearchPanel] = useState(true);
+  const [initialSearchComplete, setInitialSearchComplete] = useState(false);
+  const [lastSearchInput, setLastSearchInput] = useState('');
 
+  const queryInput = useAnswersState((state) => state.query.input);
   const userLocation = useAnswersState((state) => state.location.userLocation);
   const eventsCount = useAnswersState((state) => state.vertical.resultsCount) || 0;
   const events = useAnswersState((state) => state.vertical.results);
@@ -89,6 +94,8 @@ const EventsMap = (): JSX.Element => {
   }, []);
 
   useEffect(() => {
+    setLastSearchInput(queryInput || '');
+
     if (map.current && events) {
       const validatedEvents = events.map((event) => {
         const transformedFieldData = applyFieldMappings(event.rawData, eventFieldMappings);
@@ -147,9 +154,15 @@ const EventsMap = (): JSX.Element => {
       {initialLoading && <MapLoadingScreen />}
       <div ref={mapContainer} className="absolute top-0 bottom-0 w-full overflow-hidden">
         <div
-          className={classNames('absolute w-96 h-full bg-backgroundGray', {
-            'bg-transparent': eventsCount === 0,
-          })}
+          className={classNames(
+            'absolute w-96  h-full bg-backgroundGray left-0',
+            {
+              'bg-transparent': !initialSearchComplete,
+            },
+            { 'left-0': showSearchPanel },
+            { '-left-96': !showSearchPanel }
+          )}
+          style={{ transition: 'left 0.1s linear' }}
         >
           <div
             className={classNames('h-16 flex items-center px-4', { 'shadow-bottom': !scrollAtTop })}
@@ -163,19 +176,36 @@ const EventsMap = (): JSX.Element => {
                 inputElement: 'outline-none flex-grow border-none h-full pl-0.5 pr-2 bg-cardGray',
               }}
               cssCompositionMethod="assign"
+              onSearch={() => {
+                if (!initialSearchComplete) {
+                  setInitialSearchComplete(true);
+                }
+                answersActions.executeVerticalQuery();
+              }}
             />
           </div>
           <div
             ref={resultsContainer}
-            className="overflow-y-auto h-full"
+            className="overflow-y-scroll h-full flex flex-col items-center"
             onScroll={handleResultsScroll}
           >
             {eventsCount > 0 && (
-              <VerticalResults
-                CardComponent={EventCard}
-                customCssClasses={{ container: 'p-4 overflow-y-auto' }}
-              />
+              <VerticalResults CardComponent={EventCard} customCssClasses={{ container: 'p-4 ' }} />
             )}
+            {eventsCount === 0 && initialSearchComplete && (
+              <span className="px-4">{`No search results found for ${lastSearchInput}`}</span>
+            )}
+          </div>
+          <div className={'left-96 absolute top-0 bottom-0 flex flex-col justify-center '}>
+            <button
+              className="w-5 h-11 bg-backgroundGray rounded-r-md"
+              onClick={() => setShowSearchPanel(!showSearchPanel)}
+            >
+              <BiCaretLeft
+                className={classNames({ 'transform rotate-180': !showSearchPanel })}
+                size={16}
+              />
+            </button>
           </div>
         </div>
       </div>
