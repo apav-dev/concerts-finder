@@ -179,7 +179,7 @@ const EventCard = (props: StandardCardProps): JSX.Element => {
   };
 
   return (
-    <div className="border-b rounded-sm p-2 shadow-sm px-4">
+    <div className="border-b rounded-sm p-2 shadow-sm px-4 w-96">
       <div className="flex justify-between items-center ">
         <div>
           <div className="flex text-md" style={{ color: '#ee4c7c' }}>
