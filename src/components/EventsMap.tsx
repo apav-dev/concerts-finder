@@ -7,6 +7,7 @@ import {
   useAnswersState,
 } from '@yext/answers-headless-react';
 import {
+  Filters,
   SearchBar,
   SpellCheck,
   updateLocationIfNeeded,
@@ -23,6 +24,7 @@ import { applyFieldMappings } from '@yext/answers-react-components/lib/component
 import { GeoJSONSource } from 'mapbox-gl';
 import { BiCaretLeft } from 'react-icons/bi';
 import { distanceInKmBetweenCoordinates } from '../utils/utils';
+import { MapFilterCollapsibleLabel } from './MapFilterCollapsibleLabel';
 
 mapboxgl.accessToken =
   'pk.eyJ1IjoiYXBhdmxpY2siLCJhIjoiY2wwdHB6ZHh2MG4yZTNjcnAwa200cTRwNCJ9.p0t0lKsS4NDMZWvSIKyWbA';
@@ -182,12 +184,15 @@ const EventsMap = (): JSX.Element => {
     resultsContainer.current?.scrollTop === 0 ? setScrollAtTop(true) : setScrollAtTop(false);
 
   return (
-    <div className="relative h-screen w-screen">
+    <div className="h-screen w-screen">
       {!setupDone && <MapLoadingScreen />}
       <div ref={mapContainer} className="absolute top-0 bottom-0 w-full overflow-hidden">
+        {/* <div className="relative left-96">
+          
+        </div> */}
         <div
           className={classNames(
-            'absolute w-96  h-full bg-backgroundGray left-0',
+            'absolute w-96  h-full bg-backgroundGray',
             {
               'bg-transparent': !setupDone,
             },
@@ -248,6 +253,48 @@ const EventsMap = (): JSX.Element => {
             </div>
           )}
         </div>
+        <Filters.Facets
+          searchOnChange={true}
+          className="absolute left-96 top-0 h-px bg-gray-200 flex mt-2 ml-8"
+        >
+          {(facets) =>
+            facets.map((f, i) => {
+              if (f.options.length === 0) {
+                return null;
+              }
+
+              return (
+                <div key={f.fieldId} className="md:w-40 mr-4 ">
+                  <Filters.FilterGroup>
+                    <MapFilterCollapsibleLabel
+                      label={f.fieldId === 'c_artists.c_genres' ? 'Genres' : 'US Region'}
+                    />
+                    <Filters.CollapsibleSection className="flex flex-col space-y-3 max-h-56 overflow-y-auto bg-cardGray">
+                      {f.options.map((o) => (
+                        <Filters.CheckboxOption
+                          key={o.displayName}
+                          value={(o.value as string)
+                            .toLowerCase()
+                            .split(' ')
+                            .map((s) => s.charAt(0).toUpperCase() + s.substring(1))
+                            .join(' ')}
+                          fieldId={f.fieldId}
+                          customCssClasses={{
+                            container: 'flex items-center space-x-3 ml-2',
+                            label: 'text-sm font-normal cursor-pointer',
+                            input:
+                              'w-3.5 h-3.5 form-checkbox cursor-pointer border border-gray-300 rounded-sm text-fontPink focus:ring-fontPink',
+                          }}
+                          cssCompositionMethod={'assign'}
+                        />
+                      ))}
+                    </Filters.CollapsibleSection>
+                  </Filters.FilterGroup>
+                </div>
+              );
+            })
+          }
+        </Filters.Facets>
       </div>
     </div>
   );
