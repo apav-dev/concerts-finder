@@ -174,7 +174,7 @@ const EventCard = (props: StandardCardProps): JSX.Element => {
       </div>
       <ul
         className={classNames(
-          { 'max-h-72 overflow-hidden': drawerState === 'open' },
+          { 'max-h-80 overflow-hidden': drawerState === 'open' },
           { 'max-h-0 overflow-hidden': drawerState === 'closed' || drawerState === 'none' }
         )}
         //TODO: remove inline style

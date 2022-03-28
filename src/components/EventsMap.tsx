@@ -253,48 +253,57 @@ const EventsMap = (): JSX.Element => {
             </div>
           )}
         </div>
-        <Filters.Facets
-          searchOnChange={true}
-          className="absolute left-96 top-0 h-px bg-gray-200 flex mt-2 ml-8"
+        <div
+          className={classNames(
+            'absolute top-0',
+            { 'left-96': showSearchPanel },
+            { '-left-0': !showSearchPanel }
+          )}
+          style={{ transition: 'left 0.1s linear' }}
         >
-          {(facets) =>
-            facets.map((f, i) => {
-              if (f.options.length === 0) {
-                return null;
-              }
+          <Filters.Facets
+            searchOnChange={true}
+            className={classNames('absolute top-0 h-px bg-gray-200 flex mt-2 ml-8')}
+          >
+            {(facets) =>
+              facets.map((f, i) => {
+                if (f.options.length === 0) {
+                  return null;
+                }
 
-              return (
-                <div key={f.fieldId} className="md:w-40 mr-4 ">
-                  <Filters.FilterGroup>
-                    <MapFilterCollapsibleLabel
-                      label={f.fieldId === 'c_artists.c_genres' ? 'Genres' : 'US Region'}
-                    />
-                    <Filters.CollapsibleSection className="flex flex-col space-y-3 max-h-56 overflow-y-auto bg-cardGray">
-                      {f.options.map((o) => (
-                        <Filters.CheckboxOption
-                          key={o.displayName}
-                          value={(o.value as string)
-                            .toLowerCase()
-                            .split(' ')
-                            .map((s) => s.charAt(0).toUpperCase() + s.substring(1))
-                            .join(' ')}
-                          fieldId={f.fieldId}
-                          customCssClasses={{
-                            container: 'flex items-center space-x-3 ml-2',
-                            label: 'text-sm font-normal cursor-pointer',
-                            input:
-                              'w-3.5 h-3.5 form-checkbox cursor-pointer border border-gray-300 rounded-sm text-fontPink focus:ring-fontPink',
-                          }}
-                          cssCompositionMethod={'assign'}
-                        />
-                      ))}
-                    </Filters.CollapsibleSection>
-                  </Filters.FilterGroup>
-                </div>
-              );
-            })
-          }
-        </Filters.Facets>
+                return (
+                  <div key={f.fieldId} className="md:w-40 mr-4 ">
+                    <Filters.FilterGroup>
+                      <MapFilterCollapsibleLabel
+                        label={f.fieldId === 'c_artists.c_genres' ? 'Genres' : 'US Region'}
+                      />
+                      <Filters.CollapsibleSection className="flex flex-col space-y-3 max-h-56 overflow-y-auto bg-cardGray shadow-xl">
+                        {f.options.map((o) => (
+                          <Filters.CheckboxOption
+                            key={o.displayName}
+                            value={(o.value as string)
+                              .toLowerCase()
+                              .split(' ')
+                              .map((s) => s.charAt(0).toUpperCase() + s.substring(1))
+                              .join(' ')}
+                            fieldId={f.fieldId}
+                            customCssClasses={{
+                              container: 'flex items-center space-x-3 ml-2',
+                              label: 'text-sm font-normal cursor-pointer',
+                              input:
+                                'w-3.5 h-3.5 form-checkbox cursor-pointer border border-gray-300 rounded-sm text-fontPink focus:ring-fontPink',
+                            }}
+                            cssCompositionMethod={'assign'}
+                          />
+                        ))}
+                      </Filters.CollapsibleSection>
+                    </Filters.FilterGroup>
+                  </div>
+                );
+              })
+            }
+          </Filters.Facets>
+        </div>
       </div>
     </div>
   );
