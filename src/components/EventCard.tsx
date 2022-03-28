@@ -7,7 +7,7 @@ import {
 import { useState } from 'react';
 import { BiCaretUpCircle } from 'react-icons/bi';
 import classNames from 'classnames';
-import ArtistItem, { Artist, isArtistData } from './ArtistItem';
+import ArtistItem from './ArtistItem';
 
 export interface LinkedLocation {
   name: string;
@@ -24,27 +24,6 @@ export interface YextTimeData {
   end: string;
 }
 
-export interface YextImageData {
-  url: string;
-  height: number;
-  width: number;
-  thumbnails?: YextImageData[];
-}
-
-export interface YextPrimaryPhoto {
-  photo: YextImageData;
-}
-
-export function isImageData(data: unknown): data is YextImageData {
-  if (typeof data !== 'object' || data === null) {
-    return false;
-  }
-  const expectedKeys = ['url', 'height', 'width'];
-  return expectedKeys.every((key) => {
-    return key in data;
-  });
-}
-
 export function isTimeData(data: unknown): data is YextTimeData {
   if (typeof data !== 'object' || data === null) {
     return false;
@@ -55,12 +34,12 @@ export function isTimeData(data: unknown): data is YextTimeData {
   });
 }
 
-function isArtists(data: unknown): data is Artist[] {
+export function isArray(data: unknown): data is [] {
   if (!Array.isArray(data) || data === null) {
     return false;
   }
 
-  return data.every((maybeArtist) => isArtistData(maybeArtist));
+  return true;
 }
 
 function isCoordinateData(data: unknown): data is YextDisplayCoordinate {
@@ -124,7 +103,7 @@ const EventCard = (props: StandardCardProps): JSX.Element => {
     venueName: isString,
     dateTime: isTimeData,
     lowestPrice: isString,
-    artists: isArtists,
+    artists: isArray,
   });
 
   const formatDate = (dateTime?: string) => {
@@ -189,13 +168,13 @@ const EventCard = (props: StandardCardProps): JSX.Element => {
             <div className="flex text-xs">{`${formatDate(data.dateTime?.start)}${
               data.venueName
             }`}</div>
-            <div className="flex text-xs ">{`From $${data.lowestPrice}`}</div>
+            {data.lowestPrice && <div className="flex text-xs ">{`From $${data.lowestPrice}`}</div>}
           </div>
         </div>
       </div>
       <ul
         className={classNames(
-          { 'max-h-64 overflow-hidden': drawerState === 'open' },
+          { 'max-h-72 overflow-hidden': drawerState === 'open' },
           { 'max-h-0 overflow-hidden': drawerState === 'closed' || drawerState === 'none' }
         )}
         //TODO: remove inline style
