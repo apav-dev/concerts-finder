@@ -4,10 +4,11 @@ import {
   isString,
   validateData,
 } from '@yext/answers-react-components/lib/components/utils/validateData';
-import { useState } from 'react';
+import { useContext, useState } from 'react';
 import { BiCaretUpCircle } from 'react-icons/bi';
 import classNames from 'classnames';
 import ArtistItem, { YextPhoto } from './ArtistItem';
+import { MapActionTypes, MapContext } from './MapContext';
 
 export interface LinkedLocation {
   name: string;
@@ -126,6 +127,9 @@ type DrawerState = 'none' | 'open' | 'closed';
 const EventCard = (props: StandardCardProps): JSX.Element => {
   const [drawerState, setDrawerState] = useState<DrawerState>('none');
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { state, dispatch } = useContext(MapContext);
+
   const transformedFieldData = applyFieldMappings(props.result.rawData, eventFieldMappings);
 
   const data = validateData(transformedFieldData, {
@@ -135,6 +139,7 @@ const EventCard = (props: StandardCardProps): JSX.Element => {
     dateTime: isTimeData,
     lowestPrice: isString,
     artists: isArray,
+    linkedLocation: isLinkedLocation,
   });
 
   const formatDate = (dateTime?: string) => {
@@ -188,8 +193,20 @@ const EventCard = (props: StandardCardProps): JSX.Element => {
     return `${month} ${date} · `;
   };
 
+  const handleCardClick = () => {
+    if (data.linkedLocation?.yextDisplayCoordinate) {
+      dispatch({
+        type: MapActionTypes.SetSelectedLocation,
+        payload: { selectedLocationId: data.id || '' },
+      });
+    }
+  };
+
   return (
-    <div className="border-b rounded-sm p-2 shadow-sm px-4 w-96 font-primary">
+    <div
+      className="border-b rounded-sm p-2 shadow-sm px-4 w-96 font-primary hover:bg-hoverBackgroundGray"
+      onClick={() => handleCardClick()}
+    >
       <div className="flex justify-between items-center ">
         <div>
           <div className="flex text-sm" style={{ color: '#ee4c7c' }}>

@@ -2,7 +2,7 @@ import { GeoJsonProperties } from 'geojson';
 
 export const renderEventPopup = (properties: GeoJsonProperties) => {
   return (
-    <div className="" id={properties?.id}>
+    <div>
       {properties?.venuePhotoUrl && (
         <img
           className="shadow-sm mb-2 object-cover w-full rounded-t-md max-h-16"

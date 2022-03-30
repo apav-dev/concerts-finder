@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState } from 'react';
+import { useRef, useEffect, useState, useContext } from 'react';
 import mapboxgl, { Map } from '!mapbox-gl'; // eslint-disable-line
 import {
   Matcher,
@@ -22,13 +22,15 @@ import {
 } from '@yext/answers-react-components/lib/components/utils/validateData';
 import { applyFieldMappings } from '@yext/answers-react-components/lib/components/utils/applyFieldMappings';
 import { GeoJSONSource } from 'mapbox-gl';
-import { FeatureCollection, Point } from 'geojson';
+import { FeatureCollection, Point, GeoJsonProperties } from 'geojson';
 
 import { BiCaretLeft } from 'react-icons/bi';
 import { distanceInKmBetweenCoordinates } from '../utils/distanceUtils';
 import { MapFilterCollapsibleLabel } from './MapFilterCollapsibleLabel';
 import ReactDOM from 'react-dom';
 import { renderEventPopup } from '../utils/renderEventPopup';
+import { MapContext } from './MapContext';
+import { stat } from 'fs';
 
 mapboxgl.accessToken =
   'pk.eyJ1IjoiYXBhdmxpY2siLCJhIjoiY2wwdHB6ZHh2MG4yZTNjcnAwa200cTRwNCJ9.p0t0lKsS4NDMZWvSIKyWbA';
@@ -43,6 +45,9 @@ const EventsMap = (): JSX.Element => {
   const [showSearchPanel, setShowSearchPanel] = useState(true);
   const [setupDone, setSetupDone] = useState(false);
   const [lastSearchInput, setLastSearchInput] = useState('');
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { state, dispatch } = useContext(MapContext);
 
   const queryInput = useAnswersState((state) => state.query.input);
   const userLocation = useAnswersState((state) => state.location.userLocation);
@@ -98,7 +103,6 @@ const EventsMap = (): JSX.Element => {
             source: 'eventLocations',
             layout: {
               'icon-image': 'custom-marker',
-              // 'icon-size': ['case', ['boolean', ['feature-st÷ate', 'hover'], false], 1, 1.1],
             },
           });
         }
@@ -113,24 +117,7 @@ const EventsMap = (): JSX.Element => {
         /* If it does not exist, return */
         if (!features.length) return;
 
-        const clickedPoint = features[0];
-
-        if (clickedPoint.geometry.type === 'Point') {
-          const [lng, lat] = [
-            clickedPoint.geometry.coordinates[0],
-            clickedPoint.geometry.coordinates[1],
-          ];
-
-          flyToEvent([lng, lat]);
-
-          const popupNode = document.createElement('div');
-          const element = renderEventPopup(clickedPoint.properties);
-          ReactDOM.render(element, popupNode);
-          popupRef.current.setLngLat(event.lngLat).setDOMContent(popupNode).addTo(currentMap);
-        }
-
-        // cleanup function to remove map on unmount
-        return () => currentMap.remove();
+        handleEventClick(features[0]);
       });
     });
   }, []);
@@ -174,7 +161,6 @@ const EventsMap = (): JSX.Element => {
           title: isString,
           venueName: isString,
           dateTime: isTimeData,
-          lowestPrice: isString,
           linkedLocation: isLinkedLocation,
         });
       });
@@ -189,6 +175,7 @@ const EventsMap = (): JSX.Element => {
         coordinates && bounds.extend(coordinates);
 
         return {
+          id: event.id,
           // type: 'Position',
           geometry: {
             // type: 'Point',
@@ -207,24 +194,59 @@ const EventsMap = (): JSX.Element => {
       });
 
       const pointsSource: GeoJSONSource = map.current.getSource('eventLocations') as GeoJSONSource;
-      pointsSource.setData({
-        type: 'FeatureCollection',
-        features: mapFeatures.map((feature) => ({
-          ...feature,
-          type: 'Feature',
-          geometry: { ...feature.geometry, type: 'Point' },
-        })),
-      });
-
-      if (!bounds.isEmpty()) {
-        map.current.setCenter(bounds.getCenter());
-        map.current.fitBounds(bounds, {
-          padding: { top: 20, bottom: 20, left: 20, right: 20 },
-          maxZoom: 15,
+      if (pointsSource) {
+        pointsSource.setData({
+          type: 'FeatureCollection',
+          features: mapFeatures.map((feature) => ({
+            ...feature,
+            type: 'Feature',
+            geometry: { ...feature.geometry, type: 'Point' },
+          })),
         });
+
+        if (!bounds.isEmpty()) {
+          map.current.setCenter(bounds.getCenter());
+          map.current.fitBounds(bounds, {
+            padding: { top: 20, bottom: 20, left: 20, right: 20 },
+            maxZoom: 15,
+          });
+        }
       }
     }
   }, [events]);
+
+  useEffect(() => {
+    if (!map.current) return;
+    const currentMap = map.current;
+
+    if (state.selectedLocationId) {
+      const eventLocationFeatures = currentMap.querySourceFeatures('eventLocations');
+      const feature = eventLocationFeatures.find(
+        (feature) => feature.id?.toString() === state.selectedLocationId
+      );
+
+      feature && handleEventClick(feature);
+    }
+  }, [state.selectedLocationId]);
+
+  const handleEventClick = (feature: mapboxgl.MapboxGeoJSONFeature) => {
+    if (!map.current) return;
+    const currentMap = map.current;
+
+    if (feature.geometry.type === 'Point') {
+      const [lng, lat] = [feature.geometry.coordinates[0], feature.geometry.coordinates[1]];
+
+      flyToEvent([lng, lat]);
+
+      const popupNode = document.createElement('div');
+      const element = renderEventPopup(feature.properties);
+      ReactDOM.render(element, popupNode);
+      popupRef.current.setLngLat([lng, lat]).setDOMContent(popupNode).addTo(currentMap);
+    }
+
+    // cleanup function to remove map on unmount
+    return () => currentMap.remove();
+  };
 
   const flyToEvent = (lngLat: [number, number]) => {
     if (!map.current) return;

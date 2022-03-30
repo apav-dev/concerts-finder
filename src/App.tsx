@@ -1,6 +1,7 @@
 import './App.css';
 import { AnswersHeadlessProvider } from '@yext/answers-headless-react';
 import EventsMap from './components/EventsMap';
+import { MapProvider } from './components/MapContext';
 
 function App() {
   return (
@@ -23,7 +24,9 @@ function App() {
           filterSearch: 'https://liveapi-sandbox.yext.com/v2/accounts/me/answers/filtersearch',
         }}
       >
-        <EventsMap />
+        <MapProvider>
+          <EventsMap />
+        </MapProvider>
       </AnswersHeadlessProvider>
     </div>
   );

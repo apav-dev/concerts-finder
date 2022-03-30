@@ -16,6 +16,7 @@ module.exports = {
       },
       colors: {
         backgroundGray: '#e3e2df',
+        hoverBackgroundGray: '#cccbc9',
         cardGray: '#ebebe9',
         fontPink: '#ee4c7c',
       },
