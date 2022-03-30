@@ -22,9 +22,13 @@ import {
 } from '@yext/answers-react-components/lib/components/utils/validateData';
 import { applyFieldMappings } from '@yext/answers-react-components/lib/components/utils/applyFieldMappings';
 import { GeoJSONSource } from 'mapbox-gl';
+import { FeatureCollection, Point } from 'geojson';
+
 import { BiCaretLeft } from 'react-icons/bi';
-import { distanceInKmBetweenCoordinates } from '../utils/utils';
+import { distanceInKmBetweenCoordinates } from '../utils/distanceUtils';
 import { MapFilterCollapsibleLabel } from './MapFilterCollapsibleLabel';
+import ReactDOM from 'react-dom';
+import { renderEventPopup } from '../utils/renderEventPopup';
 
 mapboxgl.accessToken =
   'pk.eyJ1IjoiYXBhdmxpY2siLCJhIjoiY2wwdHB6ZHh2MG4yZTNjcnAwa200cTRwNCJ9.p0t0lKsS4NDMZWvSIKyWbA';
@@ -33,6 +37,7 @@ const EventsMap = (): JSX.Element => {
   const mapContainer = useRef(null);
   const map = useRef<Map | null>(null);
   const resultsContainer = useRef<HTMLDivElement>(null);
+  const popupRef = useRef(new mapboxgl.Popup({ offset: 15 }));
 
   const [scrollAtTop, setScrollAtTop] = useState(true);
   const [showSearchPanel, setShowSearchPanel] = useState(true);
@@ -76,23 +81,57 @@ const EventsMap = (): JSX.Element => {
             currentMap.addImage('custom-marker', image);
           }
 
+          const data: FeatureCollection<Point> = {
+            type: 'FeatureCollection',
+            features: [],
+          };
+
           // Add a GeoJSON source
-          currentMap.addSource('points', {
+          currentMap.addSource('eventLocations', {
             type: 'geojson',
-            data: {
-              type: 'FeatureCollection',
-              features: [],
-            },
+            data,
           });
 
           currentMap.addLayer({
-            id: 'points',
+            id: 'eventLocations',
             type: 'symbol',
-            source: 'points',
-            layout: { 'icon-image': 'custom-marker' },
+            source: 'eventLocations',
+            layout: {
+              'icon-image': 'custom-marker',
+              // 'icon-size': ['case', ['boolean', ['feature-st÷ate', 'hover'], false], 1, 1.1],
+            },
           });
         }
       );
+
+      currentMap.on('click', (event) => {
+        /* Determine if a feature in the "locations" layer exists at that point. */
+        const features = currentMap.queryRenderedFeatures(event.point, {
+          layers: ['eventLocations'],
+        });
+
+        /* If it does not exist, return */
+        if (!features.length) return;
+
+        const clickedPoint = features[0];
+
+        if (clickedPoint.geometry.type === 'Point') {
+          const [lng, lat] = [
+            clickedPoint.geometry.coordinates[0],
+            clickedPoint.geometry.coordinates[1],
+          ];
+
+          flyToEvent([lng, lat]);
+
+          const popupNode = document.createElement('div');
+          const element = renderEventPopup(clickedPoint.properties);
+          ReactDOM.render(element, popupNode);
+          popupRef.current.setLngLat(event.lngLat).setDOMContent(popupNode).addTo(currentMap);
+        }
+
+        // cleanup function to remove map on unmount
+        return () => currentMap.remove();
+      });
     });
   }, []);
 
@@ -131,6 +170,7 @@ const EventsMap = (): JSX.Element => {
       const validatedEvents = events.map((event) => {
         const transformedFieldData = applyFieldMappings(event.rawData, eventFieldMappings);
         return validateData(transformedFieldData, {
+          id: isString,
           title: isString,
           venueName: isString,
           dateTime: isTimeData,
@@ -155,12 +195,18 @@ const EventsMap = (): JSX.Element => {
             coordinates: [lng as number, lat as number],
           },
           properties: {
-            title: event.title as string,
+            id: event.id,
+            venueName: event.linkedLocation?.name,
+            venueLine1: event.linkedLocation?.address.line1,
+            venueCity: event.linkedLocation?.address.city,
+            venueRegion: event.linkedLocation?.address.region,
+            venuePostalCode: event.linkedLocation?.address.postalCode,
+            venuePhotoUrl: event.linkedLocation?.photoGallery?.[0].image.url,
           },
         };
       });
 
-      const pointsSource: GeoJSONSource = map.current.getSource('points') as GeoJSONSource;
+      const pointsSource: GeoJSONSource = map.current.getSource('eventLocations') as GeoJSONSource;
       pointsSource.setData({
         type: 'FeatureCollection',
         features: mapFeatures.map((feature) => ({
@@ -180,19 +226,25 @@ const EventsMap = (): JSX.Element => {
     }
   }, [events]);
 
+  const flyToEvent = (lngLat: [number, number]) => {
+    if (!map.current) return;
+
+    map.current.flyTo({
+      center: [lngLat[0], lngLat[1]],
+      zoom: map.current.getZoom(),
+    });
+  };
+
   const handleResultsScroll = () =>
     resultsContainer.current?.scrollTop === 0 ? setScrollAtTop(true) : setScrollAtTop(false);
 
   return (
-    <div className="h-screen w-screen">
+    <div>
       {!setupDone && <MapLoadingScreen />}
       <div ref={mapContainer} className="absolute top-0 bottom-0 w-full overflow-hidden">
-        {/* <div className="relative left-96">
-          
-        </div> */}
         <div
           className={classNames(
-            'absolute w-96  h-full bg-backgroundGray',
+            'absolute w-96 h-full bg-backgroundGray z-10',
             {
               'bg-transparent': !setupDone,
             },
@@ -207,7 +259,7 @@ const EventsMap = (): JSX.Element => {
             <SearchBar
               // TODO: ask about vertical divider
               customCssClasses={{
-                container: 'h-14 w-full',
+                container: 'h-14 w-full font-primary text-sm',
                 inputDropdownContainer:
                   'relative z-10 border rounded-lg border-gray-200 w-full overflow-hidden shadow-lg bg-cardGray',
                 inputElement: 'outline-none flex-grow border-none h-full pl-0.5 pr-2 bg-cardGray',
@@ -263,7 +315,9 @@ const EventsMap = (): JSX.Element => {
         >
           <Filters.Facets
             searchOnChange={true}
-            className={classNames('absolute top-0 h-px bg-gray-200 flex mt-2 ml-8')}
+            className={classNames(
+              'absolute top-0 h-px bg-gray-200 flex mt-2 ml-8 z-10 font-primary'
+            )}
           >
             {(facets) =>
               facets.map((f, i) => {

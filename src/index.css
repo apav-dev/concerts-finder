@@ -23,3 +23,14 @@ body {
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
 }
+
+.mapboxgl-popup-content {
+  min-width: 13rem;
+  max-height: 10rem;
+  background: #e3e2df;
+  padding: 0;
+}
+
+.mapboxgl-popup-anchor-bottom .mapboxgl-popup-tip {
+  border-top-color: #e3e2df;
+}

@@ -9,7 +9,7 @@ import { isArray } from './EventCard';
 export interface Artist {
   name: string;
   c_genres: string[];
-  primaryPhoto: YextPrimaryPhoto;
+  primaryPhoto: YextPhoto;
 }
 
 export interface YextImageData {
@@ -19,11 +19,11 @@ export interface YextImageData {
   thumbnails?: YextImageData[];
 }
 
-export interface YextPrimaryPhoto {
+export interface YextPhoto {
   image: YextImageData;
 }
 
-export function isYextPrimaryPhoto(data: unknown): data is YextPrimaryPhoto {
+export function isYextPrimaryPhoto(data: unknown): data is YextPhoto {
   if (typeof data !== 'object' || data === null) {
     return false;
   }
@@ -33,7 +33,7 @@ export function isYextPrimaryPhoto(data: unknown): data is YextPrimaryPhoto {
     return key in data;
   });
 
-  return containsExpectedKeys && isImageData((data as YextPrimaryPhoto).image);
+  return containsExpectedKeys && isImageData((data as YextPhoto).image);
 }
 
 export function isImageData(data: unknown): data is YextImageData {

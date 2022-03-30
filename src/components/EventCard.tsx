@@ -7,11 +7,13 @@ import {
 import { useState } from 'react';
 import { BiCaretUpCircle } from 'react-icons/bi';
 import classNames from 'classnames';
-import ArtistItem from './ArtistItem';
+import ArtistItem, { YextPhoto } from './ArtistItem';
 
 export interface LinkedLocation {
   name: string;
   yextDisplayCoordinate: YextDisplayCoordinate;
+  address: Address;
+  photoGallery?: YextPhoto[];
 }
 
 export interface YextDisplayCoordinate {
@@ -22,6 +24,13 @@ export interface YextDisplayCoordinate {
 export interface YextTimeData {
   start: string;
   end: string;
+}
+
+export interface Address {
+  line1: string;
+  city: string;
+  region: string;
+  postalCode: string;
 }
 
 export function isTimeData(data: unknown): data is YextTimeData {
@@ -53,18 +62,39 @@ function isCoordinateData(data: unknown): data is YextDisplayCoordinate {
   });
 }
 
-export function isLinkedLocation(data: unknown): data is LinkedLocation {
+function isAddress(data: unknown): data is Address {
   if (typeof data !== 'object' || data === null) {
     return false;
   }
 
-  const expectedKeys = ['name', 'yextDisplayCoordinate'];
+  const expectedKeys = ['line1', 'city', 'region', 'postalCode'];
   return expectedKeys.every((key) => {
     return key in data;
   });
 }
 
+export function isLinkedLocation(data: unknown): data is LinkedLocation {
+  if (typeof data !== 'object' || data === null) {
+    return false;
+  }
+
+  const expectedKeys = ['name', 'yextDisplayCoordinate', 'address'];
+  const containsExpectedKeys = expectedKeys.every((key) => {
+    return key in data;
+  });
+
+  return (
+    containsExpectedKeys &&
+    isCoordinateData((data as LinkedLocation).yextDisplayCoordinate) &&
+    isAddress((data as LinkedLocation).address)
+  );
+}
+
 export const eventFieldMappings: Record<string, FieldData> = {
+  id: {
+    mappingType: 'FIELD',
+    apiName: 'id',
+  },
   title: {
     mappingType: 'FIELD',
     apiName: 'name',
@@ -99,6 +129,7 @@ const EventCard = (props: StandardCardProps): JSX.Element => {
   const transformedFieldData = applyFieldMappings(props.result.rawData, eventFieldMappings);
 
   const data = validateData(transformedFieldData, {
+    id: isString,
     title: isString,
     venueName: isString,
     dateTime: isTimeData,
@@ -158,10 +189,10 @@ const EventCard = (props: StandardCardProps): JSX.Element => {
   };
 
   return (
-    <div className="border-b rounded-sm p-2 shadow-sm px-4 w-96">
+    <div className="border-b rounded-sm p-2 shadow-sm px-4 w-96 font-primary">
       <div className="flex justify-between items-center ">
         <div>
-          <div className="flex text-md" style={{ color: '#ee4c7c' }}>
+          <div className="flex text-sm" style={{ color: '#ee4c7c' }}>
             {data.title?.toUpperCase()}
           </div>
           <div>
