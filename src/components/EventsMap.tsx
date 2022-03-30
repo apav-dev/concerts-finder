@@ -22,7 +22,7 @@ import {
 } from '@yext/answers-react-components/lib/components/utils/validateData';
 import { applyFieldMappings } from '@yext/answers-react-components/lib/components/utils/applyFieldMappings';
 import { GeoJSONSource } from 'mapbox-gl';
-import { FeatureCollection, Point, GeoJsonProperties } from 'geojson';
+import { FeatureCollection, Point } from 'geojson';
 
 import { BiCaretLeft } from 'react-icons/bi';
 import { distanceInKmBetweenCoordinates } from '../utils/distanceUtils';
@@ -30,10 +30,8 @@ import { MapFilterCollapsibleLabel } from './MapFilterCollapsibleLabel';
 import ReactDOM from 'react-dom';
 import { renderEventPopup } from '../utils/renderEventPopup';
 import { MapContext } from './MapContext';
-import { stat } from 'fs';
 
-mapboxgl.accessToken =
-  'pk.eyJ1IjoiYXBhdmxpY2siLCJhIjoiY2wwdHB6ZHh2MG4yZTNjcnAwa200cTRwNCJ9.p0t0lKsS4NDMZWvSIKyWbA';
+mapboxgl.accessToken = process.env.REACT_APP_MAPBOX_ACCESS_TOKEN as string;
 
 const EventsMap = (): JSX.Element => {
   const mapContainer = useRef(null);

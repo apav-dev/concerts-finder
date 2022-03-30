@@ -2,10 +2,12 @@ import { createContext, Dispatch, useReducer } from 'react';
 
 type MapStateType = {
   selectedLocationId: string;
+  spotifyAccessToken: string;
 };
 
 const mapState = {
   selectedLocationId: '',
+  spotifyAccessToken: '',
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -23,6 +25,7 @@ type ActionMap<M extends { [index: string]: any }> = {
 export enum MapActionTypes {
   SetSelectedLocation = 'SET_SELECTED_LOCATION',
   ClearSelectedLocation = 'CLEAR_SELECTED_LOCATION',
+  SetSpotifyAccessToken = 'SET_SPOTIFY_ACCESS_TOKEN',
 }
 
 type MapPayload = {
@@ -31,6 +34,9 @@ type MapPayload = {
   };
   [MapActionTypes.ClearSelectedLocation]: {
     selectedLocationId: string;
+  };
+  [MapActionTypes.SetSpotifyAccessToken]: {
+    spotifyAccessToken: string;
   };
 };
 
@@ -47,14 +53,27 @@ export const selectedLocationReducer = (state: string, action: MapActions) => {
   }
 };
 
+export const spotifyActionReducer = (state: string, action: MapActions) => {
+  switch (action.type) {
+    case MapActionTypes.SetSpotifyAccessToken:
+      return action.payload.spotifyAccessToken;
+    default:
+      return state;
+  }
+};
+
 export const MapContext = createContext<{ state: MapStateType; dispatch: Dispatch<MapActions> }>({
   state: mapState,
   dispatch: () => null,
 });
 
-const mainReducer = ({ selectedLocationId }: MapStateType, action: MapActions): MapStateType => {
+const mainReducer = (
+  { selectedLocationId, spotifyAccessToken }: MapStateType,
+  action: MapActions
+): MapStateType => {
   const newState = {
     selectedLocationId: selectedLocationReducer(selectedLocationId, action),
+    spotifyAccessToken: spotifyActionReducer(spotifyAccessToken, action),
   };
   return newState;
 };
