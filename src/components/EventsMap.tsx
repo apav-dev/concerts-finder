@@ -6,16 +6,8 @@ import {
   useAnswersActions,
   useAnswersState,
 } from '@yext/answers-headless-react';
-import {
-  Filters,
-  SearchBar,
-  SpellCheck,
-  updateLocationIfNeeded,
-  VerticalResults,
-} from '@yext/answers-react-components';
 import MapLoadingScreen from './MapLoadingScreen';
-import EventCard, { eventFieldMappings, isLinkedLocation, isTimeData } from './EventCard';
-import classNames from 'classnames';
+import { eventFieldMappings, isLinkedLocation, isTimeData } from './EventCard';
 import {
   isString,
   validateData,
@@ -23,33 +15,24 @@ import {
 import { applyFieldMappings } from '@yext/answers-react-components/lib/components/utils/applyFieldMappings';
 import { GeoJSONSource } from 'mapbox-gl';
 import { FeatureCollection, Point } from 'geojson';
-
-import { BiCaretLeft } from 'react-icons/bi';
 import { distanceInKmBetweenCoordinates } from '../utils/distanceUtils';
-import { MapFilterCollapsibleLabel } from './MapFilterCollapsibleLabel';
 import ReactDOM from 'react-dom';
 import { renderEventPopup } from '../utils/renderEventPopup';
-import { MapContext } from './MapContext';
+import { MapActionTypes, MapContext } from './MapContext';
+import { updateLocationIfNeeded } from '@yext/answers-react-components';
 
 mapboxgl.accessToken = process.env.REACT_APP_MAPBOX_ACCESS_TOKEN as string;
 
 const EventsMap = (): JSX.Element => {
   const mapContainer = useRef(null);
   const map = useRef<Map | null>(null);
-  const resultsContainer = useRef<HTMLDivElement>(null);
   const popupRef = useRef(new mapboxgl.Popup({ offset: 15 }));
-
-  const [scrollAtTop, setScrollAtTop] = useState(true);
-  const [showSearchPanel, setShowSearchPanel] = useState(true);
-  const [setupDone, setSetupDone] = useState(false);
-  const [lastSearchInput, setLastSearchInput] = useState('');
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { state, dispatch } = useContext(MapContext);
 
   const queryInput = useAnswersState((state) => state.query.input);
   const userLocation = useAnswersState((state) => state.location.userLocation);
-  const eventsCount = useAnswersState((state) => state.vertical.resultsCount) || 0;
   const events = useAnswersState((state) => state.vertical.results);
   const answersActions = useAnswersActions();
 
@@ -143,13 +126,16 @@ const EventsMap = (): JSX.Element => {
         },
       ]);
       answersActions.executeVerticalQuery();
-      setSetupDone(true);
+      dispatch({ type: MapActionTypes.SetSetupDone, payload: { setupDone: true } });
       answersActions.setStaticFilters([]);
     }
   }, [userLocation]);
 
   useEffect(() => {
-    setLastSearchInput(queryInput || '');
+    dispatch({
+      type: MapActionTypes.SetLastSearchInput,
+      payload: { lastSearchInput: queryInput || '' },
+    });
 
     if (map.current && events) {
       const validatedEvents = events.map((event) => {
@@ -255,130 +241,10 @@ const EventsMap = (): JSX.Element => {
     });
   };
 
-  const handleResultsScroll = () =>
-    resultsContainer.current?.scrollTop === 0 ? setScrollAtTop(true) : setScrollAtTop(false);
-
   return (
     <div>
-      {!setupDone && <MapLoadingScreen />}
-      <div ref={mapContainer} className="absolute top-0 bottom-0 w-full overflow-hidden">
-        <div
-          className={classNames(
-            'absolute w-96 h-full bg-backgroundGray z-10',
-            {
-              'bg-transparent': !setupDone,
-            },
-            { 'left-0': showSearchPanel },
-            { '-left-96': !showSearchPanel }
-          )}
-          style={{ transition: 'left 0.1s linear' }}
-        >
-          <div
-            className={classNames('h-16 flex items-center px-4', { 'shadow-bottom': !scrollAtTop })}
-          >
-            <SearchBar
-              // TODO: ask about vertical divider
-              customCssClasses={{
-                container: 'h-14 w-full font-primary text-sm',
-                inputDropdownContainer:
-                  'relative z-10 border rounded-lg border-gray-200 w-full overflow-hidden shadow-lg bg-cardGray',
-                inputElement: 'outline-none flex-grow border-none h-full pl-0.5 pr-2 bg-cardGray',
-              }}
-              cssCompositionMethod="assign"
-            />
-          </div>
-          <div
-            ref={resultsContainer}
-            className="overflow-y-scroll h-full flex flex-col items-center"
-            onScroll={handleResultsScroll}
-          >
-            {eventsCount > 0 && (
-              <VerticalResults
-                CardComponent={EventCard}
-                customCssClasses={{ container: 'p-4' }}
-                allowPagination={true}
-              />
-            )}
-            {eventsCount === 0 && setupDone && (
-              <span className="px-4">{`No search results found for ${lastSearchInput}`}</span>
-            )}
-            <SpellCheck
-              customCssClasses={{
-                container: 'text-md',
-                helpText: '',
-                link: 'text-fontPink font-bold hover:underline focus:underline',
-              }}
-              cssCompositionMethod="assign"
-            />
-          </div>
-          {setupDone && (
-            <div className={'left-96 absolute top-0 bottom-0 flex flex-col justify-center '}>
-              <button
-                className="w-5 h-11 bg-backgroundGray rounded-r-md"
-                onClick={() => setShowSearchPanel(!showSearchPanel)}
-              >
-                <BiCaretLeft
-                  className={classNames({ 'transform rotate-180': !showSearchPanel })}
-                  size={16}
-                />
-              </button>
-            </div>
-          )}
-        </div>
-        <div
-          className={classNames(
-            'absolute top-0',
-            { 'left-96': showSearchPanel },
-            { '-left-0': !showSearchPanel }
-          )}
-          style={{ transition: 'left 0.1s linear' }}
-        >
-          <Filters.Facets
-            searchOnChange={true}
-            className={classNames(
-              'absolute top-0 h-px bg-gray-200 flex mt-2 ml-8 z-10 font-primary'
-            )}
-          >
-            {(facets) =>
-              facets.map((f, i) => {
-                if (f.options.length === 0) {
-                  return null;
-                }
-
-                return (
-                  <div key={f.fieldId} className="md:w-40 mr-4 ">
-                    <Filters.FilterGroup>
-                      <MapFilterCollapsibleLabel
-                        label={f.fieldId === 'c_artists.c_genres' ? 'Genres' : 'US Region'}
-                      />
-                      <Filters.CollapsibleSection className="flex flex-col space-y-3 max-h-56 overflow-y-auto bg-cardGray shadow-xl">
-                        {f.options.map((o) => (
-                          <Filters.CheckboxOption
-                            key={o.displayName}
-                            value={(o.value as string)
-                              .toLowerCase()
-                              .split(' ')
-                              .map((s) => s.charAt(0).toUpperCase() + s.substring(1))
-                              .join(' ')}
-                            fieldId={f.fieldId}
-                            customCssClasses={{
-                              container: 'flex items-center space-x-3 ml-2',
-                              label: 'text-sm font-normal cursor-pointer',
-                              input:
-                                'w-3.5 h-3.5 form-checkbox cursor-pointer border border-gray-300 rounded-sm text-fontPink focus:ring-fontPink',
-                            }}
-                            cssCompositionMethod={'assign'}
-                          />
-                        ))}
-                      </Filters.CollapsibleSection>
-                    </Filters.FilterGroup>
-                  </div>
-                );
-              })
-            }
-          </Filters.Facets>
-        </div>
-      </div>
+      {!state.setupDone && <MapLoadingScreen />}
+      <div ref={mapContainer} className="absolute top-0 bottom-0 w-full overflow-hidden"></div>
     </div>
   );
 };

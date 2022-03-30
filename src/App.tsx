@@ -2,6 +2,7 @@ import './App.css';
 import { AnswersHeadlessProvider } from '@yext/answers-headless-react';
 import EventsMap from './components/EventsMap';
 import { MapProvider } from './components/MapContext';
+import { EventsOverlay } from './components/EventsOverlay';
 
 function App() {
   return (
@@ -26,6 +27,7 @@ function App() {
       >
         <MapProvider>
           <EventsMap />
+          <EventsOverlay />
         </MapProvider>
       </AnswersHeadlessProvider>
     </div>
