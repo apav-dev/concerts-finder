@@ -19,6 +19,7 @@ module.exports = {
         hoverBackgroundGray: '#cccbc9',
         cardGray: '#ebebe9',
         fontPink: '#ee4c7c',
+        spotifyGreen: '#44c767',
       },
       transitionProperty: {
         height: 'height',

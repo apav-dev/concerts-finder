@@ -1,11 +1,12 @@
 import { useAnswersState } from '@yext/answers-headless-react';
 import { Filters, SearchBar, SpellCheck, VerticalResults } from '@yext/answers-react-components';
 import classNames from 'classnames';
-import { useContext, useRef, useState } from 'react';
+import { useContext, useEffect, useRef, useState } from 'react';
 import { BiCaretLeft } from 'react-icons/bi';
 import EventCard from './EventCard';
-import { MapContext } from './MapContext';
+import { MapActionTypes, MapContext } from './MapContext';
 import { MapFilterCollapsibleLabel } from './MapFilterCollapsibleLabel';
+import TopOverlay, { OverlayState } from './TopOverlay';
 
 export const EventsOverlay = (): JSX.Element => {
   const resultsContainer = useRef<HTMLDivElement>(null);
@@ -17,16 +18,33 @@ export const EventsOverlay = (): JSX.Element => {
 
   const eventsCount = useAnswersState((state) => state.vertical.resultsCount) || 0;
 
+  useEffect(() => {
+    async function getToken() {
+      const response = await fetch('/auth/token');
+      const json = await response.json();
+
+      if (json.access_token) {
+        dispatch({
+          type: MapActionTypes.SetSpotifyAccessToken,
+          payload: { spotifyAccessToken: json.access_token },
+        });
+      }
+    }
+
+    getToken();
+  }, []);
+
   const handleResultsScroll = () =>
     resultsContainer.current?.scrollTop === 0 ? setScrollAtTop(true) : setScrollAtTop(false);
 
   return (
     <div>
+      <TopOverlay overlayType={state.topOverlayState} />
       <div
         className={classNames(
           'absolute w-96 h-full bg-backgroundGray z-10',
           {
-            'bg-transparent': !state.setupDone,
+            'bg-transparent': state.topOverlayState === OverlayState.Loading,
           },
           { 'left-0': showSearchPanel },
           { '-left-96': !showSearchPanel }
@@ -59,7 +77,7 @@ export const EventsOverlay = (): JSX.Element => {
               allowPagination={true}
             />
           )}
-          {eventsCount === 0 && state.setupDone && (
+          {eventsCount === 0 && state.topOverlayState !== OverlayState.Loading && (
             <span className="px-4">{`No search results found for ${state.lastSearchInput}`}</span>
           )}
           <SpellCheck
@@ -71,7 +89,7 @@ export const EventsOverlay = (): JSX.Element => {
             cssCompositionMethod="assign"
           />
         </div>
-        {state.setupDone && (
+        {state.topOverlayState !== OverlayState.Loading && (
           <div className={'left-96 absolute top-0 bottom-0 flex flex-col justify-center '}>
             <button
               className="w-5 h-11 bg-backgroundGray rounded-r-md"

@@ -69,7 +69,6 @@ app.get('/auth/callback', (req, res) => {
 });
 
 app.get('/auth/token', (req, res) => {
-  console.log('Hello!!');
   res.json({ access_token: access_token });
 });
 

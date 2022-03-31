@@ -5,6 +5,10 @@ import {
   validateData,
 } from '@yext/answers-react-components/lib/components/utils/validateData';
 import { isArray } from './EventCard';
+import { BiPlayCircle } from 'react-icons/bi';
+import { MapActionTypes, MapContext } from './MapContext';
+import { useContext } from 'react';
+import { OverlayState } from './TopOverlay';
 
 export interface Artist {
   name: string;
@@ -68,23 +72,45 @@ export const eventFieldMappings: Record<string, FieldData> = {
 const ArtistItem = ({ artist }: ArtistCardProps): JSX.Element => {
   const transformedFieldData = applyFieldMappings(artist, eventFieldMappings);
 
+  const { state, dispatch } = useContext(MapContext);
+
   const artistData = validateData(transformedFieldData, {
     name: isString,
     genres: isArray,
     artistPhoto: isYextPrimaryPhoto,
   });
 
+  const handlePlayClick = () => {
+    if (!state.spotifyAccessToken) {
+      dispatch({
+        type: MapActionTypes.SetTopOverlayState,
+        payload: { topOverlayState: OverlayState.Spotify },
+      });
+    }
+  };
+
   return (
-    <li className="bg-cardGray shadow-lg my-2 px-2">
-      <div className="flex justify-between items-center">
-        <span className="flex text-xs ">{artistData.name}</span>
-        {artistData.artistPhoto?.image.url && (
-          <img
-            className="h-auto shadow-sm my-2 object-contain"
-            style={{ maxWidth: '3rem' }}
-            src={artistData.artistPhoto.image.url}
-          />
-        )}
+    <li className="bg-cardGray shadow-lg my-2 px-2 ">
+      <div className="flex justify-between w-full items-center">
+        <div className="flex items-center">
+          {artistData.artistPhoto?.image.url && (
+            <img
+              className="h-auto shadow-sm my-2 object-contain"
+              style={{ maxWidth: '3rem' }}
+              src={artistData.artistPhoto.image.url}
+            />
+          )}
+          <span className="flex ml-2 text-xs ">{artistData.name}</span>
+        </div>
+        <div>
+          <button
+            className="text-fontPink flex items-center hover:underline text-xs"
+            onClick={() => handlePlayClick()}
+          >
+            Play Top Songs
+            <BiPlayCircle className="ml-1" size={16} />
+          </button>
+        </div>
       </div>
     </li>
   );

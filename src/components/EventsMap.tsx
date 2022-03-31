@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState, useContext } from 'react';
+import { useRef, useEffect, useContext } from 'react';
 import mapboxgl, { Map } from '!mapbox-gl'; // eslint-disable-line
 import {
   Matcher,
@@ -6,7 +6,6 @@ import {
   useAnswersActions,
   useAnswersState,
 } from '@yext/answers-headless-react';
-import MapLoadingScreen from './MapLoadingScreen';
 import { eventFieldMappings, isLinkedLocation, isTimeData } from './EventCard';
 import {
   isString,
@@ -20,6 +19,7 @@ import ReactDOM from 'react-dom';
 import { renderEventPopup } from '../utils/renderEventPopup';
 import { MapActionTypes, MapContext } from './MapContext';
 import { updateLocationIfNeeded } from '@yext/answers-react-components';
+import { OverlayState } from './TopOverlay';
 
 mapboxgl.accessToken = process.env.REACT_APP_MAPBOX_ACCESS_TOKEN as string;
 
@@ -126,7 +126,10 @@ const EventsMap = (): JSX.Element => {
         },
       ]);
       answersActions.executeVerticalQuery();
-      dispatch({ type: MapActionTypes.SetSetupDone, payload: { setupDone: true } });
+      dispatch({
+        type: MapActionTypes.SetTopOverlayState,
+        payload: { topOverlayState: OverlayState.None },
+      });
       answersActions.setStaticFilters([]);
     }
   }, [userLocation]);
@@ -243,7 +246,6 @@ const EventsMap = (): JSX.Element => {
 
   return (
     <div>
-      {!state.setupDone && <MapLoadingScreen />}
       <div ref={mapContainer} className="absolute top-0 bottom-0 w-full overflow-hidden"></div>
     </div>
   );
