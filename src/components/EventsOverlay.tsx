@@ -6,6 +6,7 @@ import { BiCaretLeft } from 'react-icons/bi';
 import EventCard from './EventCard';
 import { MapActionTypes, MapContext } from './MapContext';
 import { MapFilterCollapsibleLabel } from './MapFilterCollapsibleLabel';
+import { SpotifyPlayer } from './SpotifyPlayer';
 import TopOverlay, { OverlayState } from './TopOverlay';
 
 export const EventsOverlay = (): JSX.Element => {
@@ -154,6 +155,7 @@ export const EventsOverlay = (): JSX.Element => {
           }
         </Filters.Facets>
       </div>
+      <SpotifyPlayer />
     </div>
   );
 };
