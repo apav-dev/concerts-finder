@@ -1,6 +1,6 @@
 import { useContext } from 'react';
-import { MapActionTypes, MapContext } from '../components/MapContext';
-import { OverlayState } from '../components/TopOverlay';
+import { MapActionTypes, MapContext } from './MapContext';
+import { OverlayState } from './TopOverlay';
 
 export const SpotifyLoginModal = () => {
   const { state, dispatch } = useContext(MapContext);
@@ -13,7 +13,7 @@ export const SpotifyLoginModal = () => {
   };
 
   return (
-    <div className="bg-backgroundGray p-20  flex flex-col items-center">
+    <div className="bg-backgroundGray p-20 flex flex-col items-center">
       <div className="bg-spotifyGreen rounded-3xl p-4">
         <a className="text-white " href="/auth/login" onClick={() => handleCloseTopOverlay()}>
           Login with Spotify

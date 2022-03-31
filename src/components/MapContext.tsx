@@ -6,6 +6,7 @@ type MapStateType = {
   spotifyAccessToken: string;
   lastSearchInput: string;
   topOverlayState: OverlayState;
+  artistSpotifyId: string;
 };
 
 const mapState = {
@@ -13,6 +14,7 @@ const mapState = {
   spotifyAccessToken: '',
   lastSearchInput: '',
   topOverlayState: OverlayState.Loading,
+  artistSpotifyId: '',
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -33,6 +35,8 @@ export enum MapActionTypes {
   SetSpotifyAccessToken = 'SET_SPOTIFY_ACCESS_TOKEN',
   SetLastSearchInput = 'SET_LAST_SEARCH_INPUT',
   SetTopOverlayState = 'SET_TOP_OVERLAY_STATE',
+  SetArtistSpotifyId = 'SET_ARTIST_SPOTIFY_ID',
+  ClearArtistSpotifyId = 'CLEAR_ARTIST_SPOTIFY_ID',
 }
 
 type MapPayload = {
@@ -51,6 +55,10 @@ type MapPayload = {
   [MapActionTypes.SetTopOverlayState]: {
     topOverlayState: OverlayState;
   };
+  [MapActionTypes.SetArtistSpotifyId]: {
+    artistSpotifyId: string;
+  };
+  [MapActionTypes.ClearArtistSpotifyId]: Record<string, never>;
 };
 
 export type MapActions = ActionMap<MapPayload>[keyof ActionMap<MapPayload>];
@@ -93,22 +101,38 @@ export const topOverlayStateReducer = (state: OverlayState, action: MapActions) 
   }
 };
 
+export const ArtistSpotifyIdReducer = (state: string, action: MapActions) => {
+  switch (action.type) {
+    case MapActionTypes.SetArtistSpotifyId:
+      return action.payload.artistSpotifyId;
+    case MapActionTypes.ClearArtistSpotifyId:
+      return '';
+    default:
+      return state;
+  }
+};
+
 export const MapContext = createContext<{ state: MapStateType; dispatch: Dispatch<MapActions> }>({
   state: mapState,
   dispatch: () => null,
 });
 
 const mainReducer = (
-  { selectedLocationId, spotifyAccessToken, lastSearchInput, topOverlayState }: MapStateType,
+  {
+    selectedLocationId,
+    spotifyAccessToken,
+    lastSearchInput,
+    topOverlayState,
+    artistSpotifyId,
+  }: MapStateType,
   action: MapActions
 ): MapStateType => {
-  // eslint-disable-next-line no-debugger
-  debugger;
   const newState = {
     selectedLocationId: selectedLocationReducer(selectedLocationId, action),
     spotifyAccessToken: spotifyActionReducer(spotifyAccessToken, action),
     lastSearchInput: lastSearchInputReducer(lastSearchInput, action),
     topOverlayState: topOverlayStateReducer(topOverlayState, action),
+    artistSpotifyId: ArtistSpotifyIdReducer(artistSpotifyId, action),
   };
   return newState;
 };

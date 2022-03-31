@@ -1,5 +1,5 @@
 import ScaleLoader from 'react-spinners/ScaleLoader';
-import { SpotifyLoginModal } from '../utils/SpotifyLoginModal';
+import { SpotifyLoginModal } from './SpotifyLoginModal';
 
 export enum OverlayState {
   None = 'none',

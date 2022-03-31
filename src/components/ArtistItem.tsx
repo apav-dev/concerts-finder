@@ -14,6 +14,7 @@ export interface Artist {
   name: string;
   c_genres: string[];
   primaryPhoto: YextPhoto;
+  c_spotifyId: string;
 }
 
 export interface YextImageData {
@@ -67,6 +68,10 @@ export const eventFieldMappings: Record<string, FieldData> = {
     mappingType: 'FIELD',
     apiName: 'primaryPhoto',
   },
+  spotifyId: {
+    mappingType: 'FIELD',
+    apiName: 'c_spotifyId',
+  },
 };
 
 const ArtistItem = ({ artist }: ArtistCardProps): JSX.Element => {
@@ -78,6 +83,7 @@ const ArtistItem = ({ artist }: ArtistCardProps): JSX.Element => {
     name: isString,
     genres: isArray,
     artistPhoto: isYextPrimaryPhoto,
+    spotifyId: isString,
   });
 
   const handlePlayClick = () => {
@@ -87,6 +93,11 @@ const ArtistItem = ({ artist }: ArtistCardProps): JSX.Element => {
         payload: { topOverlayState: OverlayState.Spotify },
       });
     }
+
+    dispatch({
+      type: MapActionTypes.SetArtistSpotifyId,
+      payload: { artistSpotifyId: artistData.spotifyId || '' },
+    });
   };
 
   return (

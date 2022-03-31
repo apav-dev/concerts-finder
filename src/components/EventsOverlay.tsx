@@ -155,7 +155,9 @@ export const EventsOverlay = (): JSX.Element => {
           }
         </Filters.Facets>
       </div>
-      <SpotifyPlayer />
+      {state.spotifyAccessToken && state.artistSpotifyId && (
+        <SpotifyPlayer accessToken={state.spotifyAccessToken} artistId={state.artistSpotifyId} />
+      )}
     </div>
   );
 };
