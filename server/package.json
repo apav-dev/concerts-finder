@@ -11,8 +11,9 @@
   "author": "apav_dev",
   "license": "ISC",
   "dependencies": {
+    "axios": "^0.26.1",
     "express": "^4.17.3",
-    "request": "^2.88.2"
+    "qs": "^6.10.3"
   },
   "devDependencies": {
     "@types/express": "^4.17.13",
