@@ -118,7 +118,7 @@ export const SpotifyPlayer = ({
             {tracks[trackIndex]?.artists.map((artist) => artist.name).join(', ')}
           </div>
         </div>
-        <div className="flex justify-center my-2 items-center">
+        <div className="flex justify-center py-2 items-center">
           <button
             className="w-7 h-7 bg-fontPink rounded-full mr-2"
             onClick={() => handlePrevTrackClick()}

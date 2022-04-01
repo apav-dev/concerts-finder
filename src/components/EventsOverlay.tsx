@@ -43,7 +43,7 @@ export const EventsOverlay = (): JSX.Element => {
       <TopOverlay overlayType={state.topOverlayState} />
       <div
         className={classNames(
-          'absolute w-96 h-full bg-backgroundGray z-10',
+          'absolute w-96 top-0 bottom-0 bg-backgroundGray z-10',
           {
             'bg-transparent': state.topOverlayState === OverlayState.Loading,
           },
@@ -52,13 +52,11 @@ export const EventsOverlay = (): JSX.Element => {
         )}
         style={{ transition: 'left 0.1s linear' }}
       >
-        <div
-          className={classNames('h-16 flex items-center px-4', { 'shadow-bottom': !scrollAtTop })}
-        >
+        <div className={classNames(' flex items-center px-4', { 'shadow-bottom': !scrollAtTop })}>
           <SearchBar
             // TODO: ask about vertical divider
             customCssClasses={{
-              container: 'h-14 w-full font-primary text-sm',
+              container: 'my-2 w-full font-primary text-sm',
               inputDropdownContainer:
                 'relative z-10 border rounded-lg border-gray-200 w-full overflow-hidden shadow-lg bg-cardGray',
               inputElement: 'outline-none flex-grow border-none h-full pl-0.5 pr-2 bg-cardGray',
@@ -68,7 +66,9 @@ export const EventsOverlay = (): JSX.Element => {
         </div>
         <div
           ref={resultsContainer}
-          className="overflow-y-scroll h-full flex flex-col items-center"
+          className="overflow-y-scroll flex flex-col"
+          // TODO: see if there's a better way of doing this
+          style={{ maxHeight: '79.1875rem' }}
           onScroll={handleResultsScroll}
         >
           {eventsCount > 0 && (
