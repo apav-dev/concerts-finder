@@ -1,38 +1,26 @@
-import { useContext, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { getTopTracksForArtist, playTrack } from '../utils/spotifyApiUtils';
-import { MapContext } from './MapContext';
-
-const track = {
-  name: '',
-  album: {
-    images: [{ url: '' }],
-  },
-  artists: [{ name: '' }],
-  uri: '',
-};
+import { BiPlay, BiPause, BiSkipNext, BiSkipPrevious, BiX } from 'react-icons/bi';
 
 interface SpotifyPlayerProps {
   accessToken: string;
   artistId: string;
+  onClosePlayerClick: () => void;
 }
 
-export const SpotifyPlayer = ({ accessToken, artistId }: SpotifyPlayerProps) => {
+export const SpotifyPlayer = ({
+  accessToken,
+  artistId,
+  onClosePlayerClick,
+}: SpotifyPlayerProps) => {
   const [isPaused, setPaused] = useState(true);
   const [isActive, setActive] = useState(false);
   const [player, setPlayer] = useState<Spotify.Player | undefined>(undefined);
-  const [currentTrack, setCurrentTrack] = useState(track);
+  const [trackIndex, setTrackIndex] = useState(0);
   const [deviceId, setDeviceId] = useState('');
   const [tracks, setTracks] = useState<Spotify.Track[]>([]);
 
   useEffect(() => {
-    // Fetch the top 10 tracks for the given artist
-    const fetchTracks = async () => {
-      const tracksResponse = await getTopTracksForArtist(accessToken, artistId);
-      setTracks(tracksResponse);
-    };
-
-    fetchTracks();
-
     // Setup Spotify Web Playback SDK
     const script = document.createElement('script');
     script.src = 'https://sdk.scdn.co/spotify-player.js';
@@ -42,7 +30,7 @@ export const SpotifyPlayer = ({ accessToken, artistId }: SpotifyPlayerProps) => 
 
     window.onSpotifyWebPlaybackSDKReady = () => {
       const player = new window.Spotify.Player({
-        name: 'Web Playback SDK',
+        name: 'Yext Concerts Finder',
         getOAuthToken: (cb) => {
           cb(accessToken);
         },
@@ -67,7 +55,7 @@ export const SpotifyPlayer = ({ accessToken, artistId }: SpotifyPlayerProps) => 
           return;
         }
 
-        setCurrentTrack(state.track_window.current_track);
+        // setCurrentTrack(state.track_window.current_track);
         setPaused(state.paused);
 
         player.getCurrentState().then((state) => (!state ? setActive(false) : setActive(true)));
@@ -82,28 +70,74 @@ export const SpotifyPlayer = ({ accessToken, artistId }: SpotifyPlayerProps) => 
   }, []);
 
   useEffect(() => {
-    // eslint-disable-next-line no-debugger
-    debugger;
-    if (tracks && tracks.length > 0) {
-      setCurrentTrack(tracks[0]);
+    // Fetch the top 10 tracks for the given artist
+    const fetchTracks = async () => {
+      const tracksResponse = await getTopTracksForArtist(accessToken, artistId);
+      setTracks(tracksResponse);
+    };
+
+    fetchTracks();
+  }, [artistId]);
+
+  const handlePrevTrackClick = () => {
+    if (trackIndex === 0) {
+      setTrackIndex(tracks.length - 1);
+    } else {
+      setTrackIndex(trackIndex - 1);
     }
-  }, [tracks]);
+  };
 
   const handlePlayPauseClick = () => {
-    isPaused
-      ? playTrack(accessToken, deviceId, currentTrack.uri)
-      : player?.pause().then(() => console.log('paused!'));
+    if (tracks[trackIndex]) {
+      isPaused ? playTrack(accessToken, deviceId, tracks[trackIndex].uri) : player?.pause();
+    }
+  };
+
+  const handleNextTrackClick = () => {
+    if (trackIndex === tracks.length - 1) {
+      setTrackIndex(0);
+    } else {
+      setTrackIndex(trackIndex + 1);
+    }
   };
 
   return (
-    <div className="absolute right-0 bottom-0 bg-backgroundGray w-40 min-h-40 mb-8 mr-6">
-      <div className="flex flex-col text-center">
-        <div className="text-base text-fontPink">{currentTrack.name}</div>
-        {/* TODO: handle songs with multiple artists */}
-        <div className="text-sm">{currentTrack.artists[0].name}</div>
+    <div className="absolute right-0 bottom-0 w-40 min-h-40 mb-8 mr-6">
+      <div>
+        <button onClick={() => onClosePlayerClick()}>
+          <BiX />
+        </button>
       </div>
       <div>
-        <button onClick={() => handlePlayPauseClick()}>{isPaused ? 'Play' : 'Pause'}</button>
+        <img src={tracks[trackIndex]?.album.images[0].url} />
+      </div>
+      <div className="bg-backgroundGray">
+        <div className="flex flex-col text-center">
+          <div className="text-base text-fontPink">{tracks[trackIndex]?.name}</div>
+          <div className="text-sm">
+            {tracks[trackIndex]?.artists.map((artist) => artist.name).join(', ')}
+          </div>
+        </div>
+        <div className="flex justify-center my-2 items-center">
+          <button
+            className="w-7 h-7 bg-fontPink rounded-full mr-2"
+            onClick={() => handlePrevTrackClick()}
+          >
+            <BiSkipPrevious className="ml-1" size={20} />
+          </button>
+          <button
+            className="rounded-full h-10 w-10 bg-fontPink flex justify-center items-center"
+            onClick={() => handlePlayPauseClick()}
+          >
+            {isPaused ? <BiPlay size={30} /> : <BiPause size={30} />}
+          </button>
+          <button
+            className="w-7 h-7 bg-fontPink rounded-full ml-2"
+            onClick={() => handleNextTrackClick()}
+          >
+            <BiSkipNext className="ml-1" size={20} />
+          </button>
+        </div>
       </div>
     </div>
   );

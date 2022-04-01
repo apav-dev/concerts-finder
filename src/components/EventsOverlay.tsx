@@ -156,7 +156,13 @@ export const EventsOverlay = (): JSX.Element => {
         </Filters.Facets>
       </div>
       {state.spotifyAccessToken && state.artistSpotifyId && (
-        <SpotifyPlayer accessToken={state.spotifyAccessToken} artistId={state.artistSpotifyId} />
+        <SpotifyPlayer
+          accessToken={state.spotifyAccessToken}
+          artistId={state.artistSpotifyId}
+          onClosePlayerClick={() =>
+            dispatch({ type: MapActionTypes.ClearArtistSpotifyId, payload: undefined })
+          }
+        />
       )}
     </div>
   );

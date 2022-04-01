@@ -58,7 +58,7 @@ type MapPayload = {
   [MapActionTypes.SetArtistSpotifyId]: {
     artistSpotifyId: string;
   };
-  [MapActionTypes.ClearArtistSpotifyId]: Record<string, never>;
+  [MapActionTypes.ClearArtistSpotifyId]: void;
 };
 
 export type MapActions = ActionMap<MapPayload>[keyof ActionMap<MapPayload>];
