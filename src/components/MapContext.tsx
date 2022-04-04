@@ -3,10 +3,11 @@ import { OverlayState } from './TopOverlay';
 
 type MapStateType = {
   selectedLocationId: string;
-  spotifyAccessToken: string;
   lastSearchInput: string;
   topOverlayState: OverlayState;
+  spotifyAccessToken: string;
   artistSpotifyId: string;
+  sidePanelWidth: number;
 };
 
 const mapState = {
@@ -15,6 +16,7 @@ const mapState = {
   lastSearchInput: '',
   topOverlayState: OverlayState.Loading,
   artistSpotifyId: '',
+  sidePanelWidth: 0,
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -37,6 +39,7 @@ export enum MapActionTypes {
   SetTopOverlayState = 'SET_TOP_OVERLAY_STATE',
   SetArtistSpotifyId = 'SET_ARTIST_SPOTIFY_ID',
   ClearArtistSpotifyId = 'CLEAR_ARTIST_SPOTIFY_ID',
+  SetSidePanelWidth = 'SET_SIDE_PANEL_WIDTH',
 }
 
 type MapPayload = {
@@ -59,6 +62,9 @@ type MapPayload = {
     artistSpotifyId: string;
   };
   [MapActionTypes.ClearArtistSpotifyId]: void;
+  [MapActionTypes.SetSidePanelWidth]: {
+    sidePanelWidth: number;
+  };
 };
 
 export type MapActions = ActionMap<MapPayload>[keyof ActionMap<MapPayload>];
@@ -101,12 +107,21 @@ export const topOverlayStateReducer = (state: OverlayState, action: MapActions) 
   }
 };
 
-export const ArtistSpotifyIdReducer = (state: string, action: MapActions) => {
+export const artistSpotifyIdReducer = (state: string, action: MapActions) => {
   switch (action.type) {
     case MapActionTypes.SetArtistSpotifyId:
       return action.payload.artistSpotifyId;
     case MapActionTypes.ClearArtistSpotifyId:
       return '';
+    default:
+      return state;
+  }
+};
+
+export const sidePanelWidthReducer = (state: number, action: MapActions) => {
+  switch (action.type) {
+    case MapActionTypes.SetSidePanelWidth:
+      return action.payload.sidePanelWidth;
     default:
       return state;
   }
@@ -124,6 +139,7 @@ const mainReducer = (
     lastSearchInput,
     topOverlayState,
     artistSpotifyId,
+    sidePanelWidth,
   }: MapStateType,
   action: MapActions
 ): MapStateType => {
@@ -132,7 +148,8 @@ const mainReducer = (
     spotifyAccessToken: spotifyActionReducer(spotifyAccessToken, action),
     lastSearchInput: lastSearchInputReducer(lastSearchInput, action),
     topOverlayState: topOverlayStateReducer(topOverlayState, action),
-    artistSpotifyId: ArtistSpotifyIdReducer(artistSpotifyId, action),
+    artistSpotifyId: artistSpotifyIdReducer(artistSpotifyId, action),
+    sidePanelWidth: sidePanelWidthReducer(sidePanelWidth, action),
   };
   return newState;
 };

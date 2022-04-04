@@ -194,7 +194,7 @@ const EventsMap = (): JSX.Element => {
         if (!bounds.isEmpty()) {
           map.current.setCenter(bounds.getCenter());
           map.current.fitBounds(bounds, {
-            padding: { top: 20, bottom: 20, left: 20, right: 20 },
+            padding: { top: 30, bottom: 30, left: 30 + state.sidePanelWidth, right: 30 },
             maxZoom: 15,
           });
         }

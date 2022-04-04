@@ -11,6 +11,7 @@ import TopOverlay, { OverlayState } from './TopOverlay';
 
 export const EventsOverlay = (): JSX.Element => {
   const resultsContainer = useRef<HTMLDivElement>(null);
+  const sidePanel = useRef<HTMLDivElement>(null);
 
   const [showSearchPanel, setShowSearchPanel] = useState(true);
   const [scrollAtTop, setScrollAtTop] = useState(true);
@@ -35,6 +36,13 @@ export const EventsOverlay = (): JSX.Element => {
     getToken();
   }, []);
 
+  useEffect(() => {
+    if (sidePanel.current) {
+      const sidePanelWidth = showSearchPanel ? sidePanel.current.clientWidth : 0;
+      dispatch({ type: MapActionTypes.SetSidePanelWidth, payload: { sidePanelWidth } });
+    }
+  }, [showSearchPanel]);
+
   const handleResultsScroll = () =>
     resultsContainer.current?.scrollTop === 0 ? setScrollAtTop(true) : setScrollAtTop(false);
 
@@ -42,6 +50,7 @@ export const EventsOverlay = (): JSX.Element => {
     <div>
       <TopOverlay overlayType={state.topOverlayState} />
       <div
+        ref={sidePanel}
         className={classNames(
           'absolute w-96 top-0 bottom-0 bg-backgroundGray z-10',
           {
