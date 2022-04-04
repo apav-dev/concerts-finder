@@ -4,8 +4,8 @@ import {
   isString,
   validateData,
 } from '@yext/answers-react-components/lib/components/utils/validateData';
-import { useContext, useState } from 'react';
-import { BiCaretUpCircle } from 'react-icons/bi';
+import { useContext, useEffect, useState } from 'react';
+import { BiCaretUpCircle, BiChevronLeft, BiChevronRight } from 'react-icons/bi';
 import classNames from 'classnames';
 import ArtistItem, { YextPhoto } from './ArtistItem';
 import { MapActionTypes, MapContext } from './MapContext';
@@ -126,9 +126,15 @@ type DrawerState = 'none' | 'open' | 'closed';
 
 const EventCard = (props: StandardCardProps): JSX.Element => {
   const [drawerState, setDrawerState] = useState<DrawerState>('none');
+  const [artistPageCount, setArtistPageCount] = useState(0);
+  const [artistPageNum, setArtistPageNum] = useState(1);
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { state, dispatch } = useContext(MapContext);
+
+  useEffect(() => {
+    data.artists && setArtistPageCount(Math.ceil(data.artists.length / 4));
+  }, []);
 
   const transformedFieldData = applyFieldMappings(props.result.rawData, eventFieldMappings);
 
@@ -209,9 +215,7 @@ const EventCard = (props: StandardCardProps): JSX.Element => {
     >
       <div className="flex justify-between items-center ">
         <div>
-          <div className="flex text-sm" style={{ color: '#ee4c7c' }}>
-            {data.title?.toUpperCase()}
-          </div>
+          <div className="flex text-sm text-fontPink">{data.title?.toUpperCase()}</div>
           <div>
             <div className="flex text-xs">{`${formatDate(data.dateTime?.start)}${
               data.venueName
@@ -228,11 +232,28 @@ const EventCard = (props: StandardCardProps): JSX.Element => {
         //TODO: remove inline style
         style={{ transition: 'max-height 0.2s linear' }}
       >
-        {/* TODO: paginate artists */}
-        {data.artists?.slice(0, 4).map((artist, i) => (
+        {data.artists?.slice((artistPageNum - 1) * 4, artistPageNum * 4).map((artist, i) => (
           <ArtistItem key={i} artist={artist} />
         ))}
       </ul>
+      {artistPageCount > 1 && drawerState === 'open' && (
+        <div className="flex justify-center">
+          <button
+            className={classNames({ 'text-fontPink': artistPageNum > 1 })}
+            disabled={artistPageNum === 1}
+            onClick={() => setArtistPageNum(artistPageNum - 1)}
+          >
+            <BiChevronLeft size={24} />
+          </button>
+          <button
+            className={classNames({ 'text-fontPink': artistPageNum < artistPageCount })}
+            disabled={artistPageNum === artistPageCount}
+            onClick={() => setArtistPageNum(artistPageNum + 1)}
+          >
+            <BiChevronRight size={24} />
+          </button>
+        </div>
+      )}
       <div className="w-full flex justify-center">
         <button
           className="flex justify-center items-center space-x-1 text-sm group"
