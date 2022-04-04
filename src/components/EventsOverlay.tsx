@@ -77,7 +77,7 @@ export const EventsOverlay = (): JSX.Element => {
           ref={resultsContainer}
           className="overflow-y-scroll flex flex-col"
           // TODO: see if there's a better way of doing this
-          style={{ maxHeight: '79.1875rem' }}
+          style={{ maxHeight: (sidePanel.current?.clientHeight as number) - 16 * 3.875 }}
           onScroll={handleResultsScroll}
         >
           {eventsCount > 0 && (

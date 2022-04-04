@@ -28,7 +28,6 @@ const EventsMap = (): JSX.Element => {
   const map = useRef<Map | null>(null);
   const popupRef = useRef(new mapboxgl.Popup({ offset: 15 }));
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { state, dispatch } = useContext(MapContext);
 
   const queryInput = useAnswersState((state) => state.query.input);
