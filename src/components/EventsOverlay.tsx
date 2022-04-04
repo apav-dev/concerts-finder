@@ -33,7 +33,7 @@ export const EventsOverlay = (): JSX.Element => {
       }
     }
 
-    getToken();
+    process.env.NODE_ENV === 'development' && getToken();
   }, []);
 
   useEffect(() => {
@@ -77,7 +77,11 @@ export const EventsOverlay = (): JSX.Element => {
           ref={resultsContainer}
           className="overflow-y-scroll flex flex-col"
           // TODO: see if there's a better way of doing this
-          style={{ maxHeight: (sidePanel.current?.clientHeight as number) - 16 * 3.875 }}
+          style={{
+            maxHeight: sidePanel.current?.clientHeight
+              ? sidePanel.current?.clientHeight - 16 * 3.875
+              : 0,
+          }}
           onScroll={handleResultsScroll}
         >
           {eventsCount > 0 && (
@@ -133,7 +137,7 @@ export const EventsOverlay = (): JSX.Element => {
 
               return (
                 <div key={f.fieldId} className="md:w-40 mr-4 ">
-                  <Filters.FilterGroup>
+                  <Filters.FilterGroup defaultExpanded={false}>
                     <MapFilterCollapsibleLabel
                       label={f.fieldId === 'c_artists.c_genres' ? 'Genres' : 'US Region'}
                     />

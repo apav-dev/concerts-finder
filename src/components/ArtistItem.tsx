@@ -114,7 +114,7 @@ const ArtistItem = ({ artist }: ArtistCardProps): JSX.Element => {
           <span className="flex ml-2 text-xs ">{artistData.name}</span>
         </div>
         <div>
-          {artistData.spotifyId && (
+          {process.env.NODE_ENV === 'development' && artistData.spotifyId && (
             <button
               className="text-fontPink flex items-center hover:underline text-xs"
               onClick={() => handlePlayClick()}
