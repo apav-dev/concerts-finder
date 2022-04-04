@@ -1,0 +1,22 @@
+{
+  "artifactStructure": {
+      "assets": [
+          {
+              "root": "build"
+          }
+      ]
+  },
+  "base_image_tag": "node-12.18",
+  "dependencies": {
+      "installDepsCmd": "echo install",
+      "requiredFiles": []
+  },
+  "buildArtifacts": {
+      "build_setup_cmd": "npm install",
+      "build_cmd": "npm run build"
+  },
+  "livePreview": {
+      "serve_setup_cmd": "echo setup",
+      "serve_cmd": "echo serve"
+  }
+}
