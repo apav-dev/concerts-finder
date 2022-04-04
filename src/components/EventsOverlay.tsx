@@ -141,11 +141,12 @@ export const EventsOverlay = (): JSX.Element => {
                       {f.options.map((o) => (
                         <Filters.CheckboxOption
                           key={o.displayName}
-                          value={(o.value as string)
+                          label={(o.value as string)
                             .toLowerCase()
                             .split(' ')
                             .map((s) => s.charAt(0).toUpperCase() + s.substring(1))
                             .join(' ')}
+                          value={o.value}
                           fieldId={f.fieldId}
                           customCssClasses={{
                             container: 'flex items-center space-x-3 ml-2',
