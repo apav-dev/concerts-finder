@@ -101,6 +101,12 @@ const EventsMap = (): JSX.Element => {
         handleEventClick(features[0]);
       });
     });
+
+    currentMap.on('movestart', (_event) => {
+      if (popupRef.current) {
+        popupRef.current.remove();
+      }
+    });
   }, []);
 
   useEffect(() => {
