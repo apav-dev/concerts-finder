@@ -13,7 +13,7 @@
     "@types/react": "^17.0.40",
     "@types/react-dom": "^17.0.13",
     "@types/spotify-web-playback-sdk": "^0.1.12",
-    "@yext/answers-react-components": "^0.1.0-beta.8",
+    "@yext/answers-react-components": "git+https://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:x-oauth-basic@github.com/yext/answers-react-components.git",
     "http-proxy-middleware": "^2.0.4",
     "mapbox-gl": "^2.7.0",
     "react": "^17.0.2",
@@ -25,7 +25,7 @@
     "web-vitals": "^2.1.4"
   },
   "peerDependencies": {
-    "@yext/answers-headless-react": "^1.1.0-beta.8"
+    "@yext/answers-headless-react": "^1.1.0-beta.10"
   },
   "scripts": {
     "start": "react-scripts start",
@@ -62,6 +62,7 @@
     "eslint-plugin-prettier": "^4.0.0",
     "eslint-plugin-react": "^7.29.4",
     "prettier": "^2.6.0",
-    "tailwindcss": "^3.0.23"
+    "tailwindcss": "^3.0.23",
+    "@yext/answers-react-components": "^0.1.0-beta.8"
   }
 }

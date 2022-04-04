@@ -150,7 +150,8 @@ export const EventsOverlay = (): JSX.Element => {
                             .split(' ')
                             .map((s) => s.charAt(0).toUpperCase() + s.substring(1))
                             .join(' ')}
-                          value={o.value}
+                          // TODO: maybe ask dev team about this
+                          value={o.value as string}
                           fieldId={f.fieldId}
                           customCssClasses={{
                             container: 'flex items-center space-x-3 ml-2',
