@@ -4,17 +4,11 @@ import {
   checkIfKgEntityExists,
   editKgEntity,
   searchForPlace,
-} from "./api.ts";
-import { fetchMyTopArtistsFromSpotify, getAccessToken } from "./spotify_api.ts";
-import { SeatGeekPerformer } from "./types.ts";
-import {
-  assertEquals,
-  assertExists,
-} from "https://deno.land/std@0.114.0/testing/asserts.ts";
-import findEventsForFavoriteArtists, {
-  createArtist,
-  getGooglePlaceImageUrls,
-} from "./mod.ts";
+} from './api.ts';
+import { fetchMyTopArtistsFromSpotify, getAccessToken } from './spotify_api.ts';
+import { SeatGeekPerformer } from './types.ts';
+import { assertEquals, assertExists } from 'https://deno.land/std@0.114.0/testing/asserts.ts';
+import findEventsForFavoriteArtists, { getGooglePlaceImageUrls } from './mod.ts';
 
 // Deno.test("findEventsForFavoriteArtists", async () => {
 //   const resp = await findEventsForFavoriteArtists("dummy token");
@@ -123,9 +117,20 @@ import findEventsForFavoriteArtists, {
 //   console.log(resp);
 // });
 
-Deno.test("getGooglePlaceImageUrls", async () => {
-  const resp = await getGooglePlaceImageUrls("barclays center");
+// Deno.test("getGooglePlaceImageUrls", async () => {
+//   const resp = await getGooglePlaceImageUrls("barclays center");
 
-  console.log(resp.length);
-  console.log(resp[0]);
+//   console.log(resp.length);
+//   console.log(resp[0]);
+// });
+
+Deno.test('mainTest', async () => {
+  const startTime = performance.now();
+
+  const resp = await findEventsForFavoriteArtists('');
+
+  const endTime = performance.now();
+  console.log(`Function runtime: ${(endTime - startTime) / 1000} seconds`);
+
+  console.log(resp);
 });

@@ -17,17 +17,19 @@ Need to refactor to make everything run in parallel and return sheets of events 
 /*
 New Process:
 1. Send all the Spotify Artists off to function to get associated Seat Geek Artists. Return object containing Spotify Artist and optional Seat Geek Artist
-2. Send off all the valid artists to be created. Need to check if each exist. If no, create. If yes, edit.
-3. For each artist now added, send off all the seat geek ids to get every event.
-4. For each event, gather the list of venues.
-5. Send of each venue name to get the image for each venue.
-6. Send off list of venues to be created.
-7. Now that all the linked entities have been created, try to return a list of all the events. Might need to return 1 at a time.
+2. For each artist now added, send off to get all the seat geek ids to get every event.
+3. Go through each event and add redo step 1 for all the event artists
+4. Send off all the valid artists to be created. Need to check if each exist. If no, create. If yes, edit.
+5. For each event, gather the list of venues.
+6. Send of each venue name to get the image for each venue.
+7. Send off list of venues to be created.
+8. Now that all the linked entities have been created, try to return a list of all the events. Might need to return 1 at a time.
 
 * Check rate limiting for Spotify and SeatGeek - doesn't seem to be an issue for these APIs but mention that it could be for other APIs
 * check if there are limits to Promise.all - doesn't seem like it will be an issue for this case
 * add and test Google Places API and Edit entities API - DONE
 * time each piece of this
+* Kanye West
 */
 
 import {
@@ -36,12 +38,12 @@ import {
   fetchEventsByPerformerById,
   searchPerformersFromSeatGeek,
   searchForPlace,
-} from "./api.ts";
+} from './api.ts';
 import {
   fetchMyTopArtistsFromSpotify,
   fetchArtistFromSpotify,
   getAccessToken,
-} from "./spotify_api.ts";
+} from './spotify_api.ts';
 import {
   KgLocation,
   KgPhoto,
@@ -49,209 +51,220 @@ import {
   SeatGeekPerformer,
   SpotifyArtist,
   State,
-} from "./types.ts";
-import { formatGoogleImageUrls, getRegionForState } from "./utils.ts";
+} from './types.ts';
+import { formatGoogleImageUrls, getRegionForState } from './utils.ts';
 
-const findEventsForFavoriteArtists = async (
-  stateString: string
-): Promise<string> => {
-  let state: State;
-  const eventArtistIds: string[] = [];
-  let data;
+//TODO: id checking
+const findEventsForFavoriteArtists = async (stateString: string): Promise<string> => {
+  let spotifyAccessToken =
+    'BQB8WK5KLAcYp2QuFS6lfbHPYVGzIYSEiqZuGIbnFN0ofWPVIWv3HwMeMfyaP2UEWwjbYkznixpjp0PcwXLvoho-6mMhX2aiKZGZIhjJh-1phoJNtS8GggJa_QkIp4xOv9Fk7PSHyInBauj2z_9YJbJ0kA';
 
-  const inputJson = JSON.parse(stateString);
+  const [favoriteSpotifyArtists, newToken] = await fetchMyTopArtistsWithRetry(spotifyAccessToken);
 
-  // Initiate state the first time the function is called
-  if (!inputJson.pageToken) {
-    state = {
-      spotifyArtists: [],
-      events: [],
-      spotifyAccessToken:
-        "BQDCY3m2ddQ9lTtcnHEpdsM9v2Z8WNhVXY3-aCfgVV-QZ0jw_rG4uUMgGUqhIvtJrh5P8PkbrY4DC8LD1F8vipM-sHzpW9tNQxHDHDXxRSXR-ZB8sLxpVbw4yZ7VN0NfZfJAJlQy8Wm5T6Nb2OnU-en14hXjs5QTNnXZaAZ1nLQ-3GwVIHZghVPtsKSwvK913EZ4EmSVC1k9",
-    };
-
-    //fetch personal top 50 artists from Spotify the first time the function runs
-    const [spotifyArtistsResp, spotifyAccessToken] =
-      await fetchMyTopArtistsWithRetry(state.spotifyAccessToken);
-    state.spotifyArtists = spotifyArtistsResp;
-
-    state.spotifyArtists = state.spotifyArtists;
-
-    if (spotifyAccessToken) {
-      state.spotifyAccessToken = spotifyAccessToken;
-    }
-  } else {
-    // Parse the page token string after the first run
-    state = JSON.parse(inputJson.pageToken);
+  if (newToken) {
+    spotifyAccessToken = newToken;
   }
 
-  // Each time there are no events left in the state, fetch events for next artist in the list
-  while (state.events.length === 0) {
-    if (state.spotifyArtists.length === 0) {
-      return JSON.stringify({ data: {} });
+  const uniqueArtistIds = [];
+
+  // Find which of my personal top 50 artists have events listed on SeatGeek. Not all artists have events.
+  const artistsWithEventsPromises = await Promise.allSettled(
+    favoriteSpotifyArtists.map((artist) => fetchSeatGeekPerformerForSpotifyArtist(artist))
+  );
+
+  const artistsWithEvents: {
+    spotifyArtist: SpotifyArtist;
+    seatGeekPerformer: SeatGeekPerformer;
+  }[] = [];
+
+  for (const artistWithEventPromise of artistsWithEventsPromises) {
+    if (artistWithEventPromise.status === 'fulfilled') {
+      const artist = artistWithEventPromise.value;
+      if (artist.seatGeekPerformer) {
+        artistsWithEvents.push({
+          spotifyArtist: artistWithEventPromise.value.spotifyArtist,
+          seatGeekPerformer: artistWithEventPromise.value.seatGeekPerformer,
+        });
+        uniqueArtistIds.push(artistWithEventPromise.value.seatGeekPerformer.id);
+      }
     }
+  }
 
-    const artist = state.spotifyArtists.shift();
+  // Fetch all of the events that my top 50 artists are performing at
+  const eventsPromises = await Promise.allSettled(
+    artistsWithEvents.map((artistWithEvent) =>
+      fetchEventsByPerformerById(artistWithEvent.seatGeekPerformer.id.toString())
+    )
+  );
 
-    if (artist) {
-      const seatGeekPerformer = await fetchSeatGeekPerformerForSpotifyArtist(
-        artist.name
-      );
+  const listedEvents: SeatGeekEvent[] = [];
+  const uniqueMusicFestivalNames: string[] = [];
 
-      if (seatGeekPerformer) {
-        const artistEventsResp = await fetchEventsByPerformerById(
-          seatGeekPerformer.id.toString()
-        );
+  for (const eventsPromise of eventsPromises) {
+    if (eventsPromise.status === 'fulfilled') {
+      const seatGeekEventsResp = eventsPromise.value;
 
-        const processedEvents = processEvents(artistEventsResp.events);
-
-        if (processedEvents.length > 0) {
-          state.events = processedEvents;
+      //filter out duplicate festivals and use performer name
+      for (const event of seatGeekEventsResp.events) {
+        if (!uniqueMusicFestivalNames.includes(event.performers[0]?.name)) {
+          if (event.type === 'music_festival') {
+            event.title = event.performers[0].name;
+            uniqueMusicFestivalNames.push(event.performers[0].name);
+            event.performers.shift();
+          }
+          listedEvents.push(event);
         }
       }
     }
   }
 
-  const seatGeekEvent = state.events.shift();
-  // TODO: is it valid to return blank data?
-  if (seatGeekEvent) {
-    const completedRequests = await Promise.allSettled(
-      seatGeekEvent.performers.map((performer) =>
-        createArtist(performer.name, state.spotifyAccessToken)
-      )
-    );
+  /// Aggregate all the locations that need created.
+  const locations = listedEvents.map((listedEvent) => ({
+    ...listedEvent.venue,
+    id: listedEvent.venue.id + '_venue',
+    c_usRegion: getRegionForState(listedEvent.venue.state),
+  }));
 
-    for (const completedRequest of completedRequests) {
-      if (completedRequest.status === "fulfilled") {
-        const [artistId, spotifyAccessToken] = completedRequest.value;
-        artistId && eventArtistIds.push(artistId);
+  // Use Google Places API to get photos for each location
 
-        if (spotifyAccessToken) {
-          state.spotifyAccessToken = spotifyAccessToken;
-        }
+  // Add the other artists performing at the events to the artistsWithEventsList.
+  const otherEventArtists: {
+    spotifyArtist?: SpotifyArtist;
+    seatGeekPerformer: SeatGeekPerformer;
+  }[] = [];
+
+  const eventPerformers = listedEvents.flatMap((listedEvent) => listedEvent.performers);
+  const otherEventArtistPromises = await Promise.allSettled(
+    eventPerformers.map((eventPerformer) =>
+      fetchSpotifyArtistForSeatGeekPerformer(spotifyAccessToken, eventPerformer)
+    )
+  );
+
+  for (const otherEventArtistPromise of otherEventArtistPromises) {
+    if (otherEventArtistPromise.status === 'fulfilled') {
+      const otherEventArtist = otherEventArtistPromise.value;
+
+      if (!uniqueArtistIds.includes(otherEventArtist.seatGeekPerformer.id)) {
+        otherEventArtists.push(otherEventArtist);
+        uniqueArtistIds.push(otherEventArtist.seatGeekPerformer.id);
       }
     }
-
-    const locationId = await createVenue({
-      meta: { id: `${seatGeekEvent.venue.id.toString()}_venue` },
-      name: seatGeekEvent.venue.name,
-      address: {
-        line1: seatGeekEvent.venue.address,
-        city: seatGeekEvent.venue.city,
-        region: seatGeekEvent.venue.state,
-        postalCode: seatGeekEvent.venue.postal_code,
-      },
-      c_usRegion: getRegionForState(seatGeekEvent.venue.state),
-    });
-
-    data = {
-      id: seatGeekEvent.id,
-      name: seatGeekEvent.title,
-      linkedLocationId: locationId,
-      startDateTime: seatGeekEvent.datetime_local,
-      endDateTime: seatGeekEvent.datetime_local,
-      linkedArtistIds: [...new Set(eventArtistIds)],
-      lowestTicketPrice: seatGeekEvent.stats?.lowest_price?.toString(),
-      averageTicketPrice: seatGeekEvent.stats?.average_price?.toString(),
-      highestTicketPrice: seatGeekEvent.stats?.highest_price?.toString(),
-      ticketUrl: seatGeekEvent.url,
-    };
   }
 
+  return listedEvents.length.toString();
   // Return the data as an object and strigify the state as the nextPageToken.
-  return JSON.stringify({ data, nextPageToken: JSON.stringify(state) });
+  // return JSON.stringify({ data, nextPageToken: JSON.stringify(state) });
 };
 
 export const fetchSeatGeekPerformerForSpotifyArtist = async (
-  artistName: string
-): Promise<SeatGeekPerformer | undefined> => {
-  const seatGeekResponse = await searchPerformersFromSeatGeek(artistName);
+  spotifyArtist: SpotifyArtist
+): Promise<{ spotifyArtist: SpotifyArtist; seatGeekPerformer: SeatGeekPerformer }> => {
+  const seatGeekResponse = await searchPerformersFromSeatGeek(spotifyArtist.name);
 
-  const performer = seatGeekResponse.performers.find(
+  const seatGeekPerformer = seatGeekResponse.performers.find(
     (performer) =>
-      performer.type === "band" &&
+      performer.type === 'band' &&
       performer.name
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .replace("\t", "")
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace('\t', '')
         .toLowerCase() ===
-        artistName
-          .normalize("NFD")
-          .replace(/[\u0300-\u036f]/g, "")
-          .replace("\t", "")
+        spotifyArtist.name
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+          .replace('\t', '')
           .toLowerCase()
   );
 
-  return performer;
-};
-
-export const createArtist = async (
-  artistName: string,
-  spotifyAccessToken: string
-): Promise<[string, string]> => {
-  let spotifyArtist: SpotifyArtist | undefined;
-  let artistImage: KgPhoto | undefined;
-
-  console.log(
-    `Checking if ${artistName} exists and has events...will create if not`
-  );
-
-  const seatGeekPerformer = await fetchSeatGeekPerformerForSpotifyArtist(
-    artistName
-  );
-
   if (seatGeekPerformer) {
-    let artistId = await checkIfKgEntityExists(seatGeekPerformer.id.toString());
-
-    // only create the artist entity in the KG if it doesn't exist yet
-    if (!artistId) {
-      // TODO: move to utils
-      const spotifyArtistId = seatGeekPerformer.links
-        ?.find((link) => link.provider === "spotify")
-        ?.id.split(":")[2];
-
-      if (spotifyArtistId) {
-        let newToken = "";
-        [spotifyArtist, newToken] = await fetchArtistWithRetry(
-          spotifyAccessToken,
-          spotifyArtistId
-        );
-
-        if (spotifyArtist.images[0]) {
-          artistImage = { image: { url: spotifyArtist.images[0].url } };
-        }
-
-        if (newToken) {
-          spotifyAccessToken = newToken;
-        }
-      }
-
-      console.log("creating " + spotifyArtist?.name);
-      artistId = await createKgEntity("ce_artist", {
-        meta: {
-          id: seatGeekPerformer.id.toString(),
-        },
-        name: spotifyArtist?.name || seatGeekPerformer.name,
-        c_genres: spotifyArtist?.genres,
-        primaryPhoto: artistImage,
-        c_spotifyId: spotifyArtist?.id,
-        c_spotifyFollowers: spotifyArtist?.followers.total.toString(),
-      });
-    }
-
-    return [artistId, spotifyAccessToken];
+    return { spotifyArtist, seatGeekPerformer };
   } else {
-    return ["", ""];
+    // eslint-disable-next-line no-console
+    console.error(`Artist ${spotifyArtist.name} does not exist in Seat Geek database`);
+    throw new Error();
   }
 };
 
+const fetchSpotifyArtistForSeatGeekPerformer = async (
+  spotifyAccessToken: string,
+  seatGeekPerformer: SeatGeekPerformer
+): Promise<{ spotifyArtist?: SpotifyArtist; seatGeekPerformer: SeatGeekPerformer }> => {
+  const spotifyArtistId = seatGeekPerformer.links
+    ?.find((link) => link.provider === 'spotify')
+    ?.id.split(':')[2];
+
+  if (spotifyArtistId) {
+    const [spotifyArtist, newToken] = await fetchArtistWithRetry(
+      spotifyAccessToken,
+      spotifyArtistId
+    );
+
+    return { spotifyArtist, seatGeekPerformer };
+  } else {
+    return { seatGeekPerformer };
+  }
+};
+
+// export const createArtist = async (
+//   artistName: string,
+//   spotifyAccessToken: string
+// ): Promise<[string, string]> => {
+//   let spotifyArtist: SpotifyArtist | undefined;
+//   let artistImage: KgPhoto | undefined;
+
+//   console.log(`Checking if ${artistName} exists and has events...will create if not`);
+
+//   const seatGeekPerformer = await fetchSeatGeekPerformerForSpotifyArtist(artistName);
+
+//   if (seatGeekPerformer) {
+//     let artistId = await checkIfKgEntityExists(seatGeekPerformer.id.toString());
+
+//     // only create the artist entity in the KG if it doesn't exist yet
+//     if (!artistId) {
+//       // TODO: move to utils
+//       const spotifyArtistId = seatGeekPerformer.links
+//         ?.find((link) => link.provider === 'spotify')
+//         ?.id.split(':')[2];
+
+//       if (spotifyArtistId) {
+//         let newToken = '';
+//         [spotifyArtist, newToken] = await fetchArtistWithRetry(spotifyAccessToken, spotifyArtistId);
+
+//         if (spotifyArtist.images[0]) {
+//           artistImage = { image: { url: spotifyArtist.images[0].url } };
+//         }
+
+//         if (newToken) {
+//           spotifyAccessToken = newToken;
+//         }
+//       }
+
+//       console.log('creating ' + spotifyArtist?.name);
+//       artistId = await createKgEntity('ce_artist', {
+//         meta: {
+//           id: seatGeekPerformer.id.toString(),
+//         },
+//         name: spotifyArtist?.name || seatGeekPerformer.name,
+//         c_genres: spotifyArtist?.genres,
+//         primaryPhoto: artistImage,
+//         c_spotifyId: spotifyArtist?.id,
+//         c_spotifyFollowers: spotifyArtist?.followers.total.toString(),
+//       });
+//     }
+
+//     return [artistId, spotifyAccessToken];
+//   } else {
+//     return ['', ''];
+//   }
+// };
+
 const createVenue = async (location: KgLocation): Promise<string> => {
-  console.log("fetching venue with id: " + location.meta.id);
+  console.log('fetching venue with id: ' + location.meta.id);
   let venueId = await checkIfKgEntityExists(location.meta.id);
 
   if (!venueId) {
     console.log(`creating location ${location.name}`);
-    venueId = await createKgEntity("location", location);
+    venueId = await createKgEntity('location', location);
   } else {
     console.log(`location ${location.name} already exists`);
   }
@@ -272,20 +285,14 @@ const fetchArtistWithRetry = async (
   spotifyArtistId: string
 ): Promise<[SpotifyArtist, string]> => {
   try {
-    const artist = await fetchArtistFromSpotify(
-      spotifyAccessToken,
-      spotifyArtistId
-    );
-    return [artist, ""];
+    const artist = await fetchArtistFromSpotify(spotifyAccessToken, spotifyArtistId);
+    return [artist, ''];
   } catch (_error) {
-    console.log("fetching new token");
+    console.log('fetching new token');
     spotifyAccessToken = await getAccessToken();
   }
 
-  const artist = await fetchArtistFromSpotify(
-    spotifyAccessToken,
-    spotifyArtistId
-  );
+  const artist = await fetchArtistFromSpotify(spotifyAccessToken, spotifyArtistId);
 
   return [artist, spotifyAccessToken];
 };
@@ -295,9 +302,9 @@ const fetchMyTopArtistsWithRetry = async (
 ): Promise<[SpotifyArtist[], string]> => {
   try {
     const artistsResp = await fetchMyTopArtistsFromSpotify(spotifyAccessToken);
-    return [artistsResp.items, ""];
+    return [artistsResp.items, ''];
   } catch (_error) {
-    console.log("fetching new token");
+    console.log('fetching new token');
     spotifyAccessToken = await getAccessToken();
   }
 
@@ -312,7 +319,7 @@ export const processEvents = (events: SeatGeekEvent[]): SeatGeekEvent[] => {
 
   for (const event of events) {
     if (!musicFestivalNames.includes(event.performers[0]?.name)) {
-      if (event.type === "music_festival") {
+      if (event.type === 'music_festival') {
         event.title = event.performers[0].name;
         musicFestivalNames.push(event.performers[0].name);
         event.performers.shift();
@@ -325,9 +332,7 @@ export const processEvents = (events: SeatGeekEvent[]): SeatGeekEvent[] => {
   return processedEvents;
 };
 
-export const getGooglePlaceImageUrls = async (
-  placeName: string
-): Promise<string[]> => {
+export const getGooglePlaceImageUrls = async (placeName: string): Promise<string[]> => {
   const googlePlaceResults = await searchForPlace(placeName);
 
   if (
@@ -335,7 +340,7 @@ export const getGooglePlaceImageUrls = async (
     googlePlaceResults.results[0].name.toLowerCase() === placeName
   ) {
     return formatGoogleImageUrls(
-      "AIzaSyAqtI0LYwB9Wo0GXiZU4cH8cVpFFi3u8Ko",
+      'AIzaSyAqtI0LYwB9Wo0GXiZU4cH8cVpFFi3u8Ko',
       googlePlaceResults.results[0].photos.map((photo) => photo.photo_reference)
     );
   } else {

@@ -75,7 +75,7 @@ export interface SeatGeekEvent {
   url: string;
 }
 
-export interface SeatGeekEvents {
+export interface SeatGeekEventResponse {
   events: SeatGeekEvent[];
 }
 
