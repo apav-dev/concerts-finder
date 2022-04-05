@@ -13,7 +13,7 @@
     "@types/react": "^17.0.40",
     "@types/react-dom": "^17.0.13",
     "@types/spotify-web-playback-sdk": "^0.1.12",
-    "@yext/answers-react-components": "git+https://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:x-oauth-basic@github.com/yext/answers-react-components.git",
+    "@yext/answers-react-components": "git+https://x-oauth-basic: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@github.com/yext/answers-react-components.git",
     "http-proxy-middleware": "^2.0.4",
     "mapbox-gl": "^2.7.0",
     "react": "^17.0.2",
