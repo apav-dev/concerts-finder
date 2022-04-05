@@ -1,0 +1,17 @@
+{
+  "files": {
+    "main.css": "/static/css/main.0bede0f4.css",
+    "main.js": "/static/js/main.f1dfcfe3.js",
+    "static/js/787.418d2e1a.chunk.js": "/static/js/787.418d2e1a.chunk.js",
+    "static/media/Inter-VariableFont.ttf": "/static/media/Inter-VariableFont.b4c30855aff392d7e8dc.ttf",
+    "static/media/MavenPro-VariableFont_wght.ttf": "/static/media/MavenPro-VariableFont_wght.c16daf59f02ebf5e2b87.ttf",
+    "index.html": "/index.html",
+    "main.0bede0f4.css.map": "/static/css/main.0bede0f4.css.map",
+    "main.f1dfcfe3.js.map": "/static/js/main.f1dfcfe3.js.map",
+    "787.418d2e1a.chunk.js.map": "/static/js/787.418d2e1a.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.0bede0f4.css",
+    "static/js/main.f1dfcfe3.js"
+  ]
+}
