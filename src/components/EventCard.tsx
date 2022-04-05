@@ -229,7 +229,7 @@ const EventCard = (props: StandardCardProps): JSX.Element => {
           { 'max-h-80 overflow-hidden': drawerState === 'open' },
           { 'max-h-0 overflow-hidden': drawerState === 'closed' || drawerState === 'none' }
         )}
-        //TODO: remove inline style
+        //TODO:  remove inline style
         style={{ transition: 'max-height 0.2s linear' }}
       >
         {data.artists?.slice((artistPageNum - 1) * 4, artistPageNum * 4).map((artist, i) => (
