@@ -18,7 +18,7 @@ import { distanceInKmBetweenCoordinates } from '../utils/distanceUtils';
 import ReactDOM from 'react-dom';
 import { renderEventPopup } from '../utils/renderEventPopup';
 import { MapActionTypes, MapContext } from './MapContext';
-import { updateLocationIfNeeded } from '@yext/answers-react-components';
+import { getUserLocation, updateLocationIfNeeded } from '@yext/answers-react-components';
 import { OverlayState } from './TopOverlay';
 
 mapboxgl.accessToken = process.env.REACT_APP_MAPBOX_ACCESS_TOKEN as string;
@@ -83,8 +83,6 @@ const EventsMap = (): JSX.Element => {
               'icon-image': 'custom-marker',
             },
           });
-
-          updateAnswersLocation();
         }
       );
 
@@ -99,6 +97,16 @@ const EventsMap = (): JSX.Element => {
 
         handleEventClick(features[0]);
       });
+
+      getUserLocation()
+        .then((userLocation) => {
+          answersActions.setUserLocation(userLocation.coords);
+        })
+        .catch(() => {
+          // eslint-disable-next-line no-console
+          console.log('Could not get user location...defaulting to NYC');
+          answersActions.setUserLocation({ latitude: 40.73061, longitude: -73.935242 });
+        });
     });
 
     currentMap.on('movestart', (_event) => {
@@ -190,23 +198,9 @@ const EventsMap = (): JSX.Element => {
     }
   }, [state.selectedLocationId]);
 
-  const updateAnswersLocation = () => {
-    updateLocationIfNeeded(answersActions, [SearchIntent.NearMe]).then(() => {
-      if (userLocation?.latitude && userLocation?.longitude) {
-        // eslint-disable-next-line no-console
-        console.log('Search for events near user location');
-        handleUserLocationSearch(userLocation.longitude, userLocation.latitude);
-      } else {
-        // eslint-disable-next-line no-console
-        console.log('Cant access user location...defaulting to NYC');
-        handleUserLocationSearch(-73.935242, 40.73061);
-      }
-    });
-  };
-
-  const handleUserLocationSearch = (lng: number, lat: number) => {
-    if (map.current) {
-      map.current.setCenter([lng, lat]);
+  useEffect(() => {
+    if (map.current && userLocation) {
+      map.current.setCenter([userLocation.longitude, userLocation.latitude]);
       answersActions.setStaticFilters([
         {
           fieldId: 'builtin.location',
@@ -234,7 +228,19 @@ const EventsMap = (): JSX.Element => {
         payload: { topOverlayState: OverlayState.None },
       });
     }
-  };
+  }, [userLocation]);
+
+  // const updateAnswersLocation = async () => {
+  //   getUserLocation()
+  //     .then((userLocation) => {
+  //       answersActions.setUserLocation(userLocation.coords);
+  //     })
+  //     .catch(() => {
+  //       // eslint-disable-next-line no-console
+  //       console.log('Could not get user location...defaulting to NYC');
+  //       answersActions.setUserLocation({ latitude: -73.935242, longitude: 40.73061 });
+  //     });
+  // };
 
   const handleEventClick = (feature: mapboxgl.MapboxGeoJSONFeature) => {
     if (!map.current) return;
