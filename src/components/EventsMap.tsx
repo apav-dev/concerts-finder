@@ -1,11 +1,6 @@
 import { useRef, useEffect, useContext } from 'react';
 import mapboxgl, { Map } from '!mapbox-gl'; // eslint-disable-line
-import {
-  Matcher,
-  SearchIntent,
-  useAnswersActions,
-  useAnswersState,
-} from '@yext/answers-headless-react';
+import { Matcher, useAnswersActions, useAnswersState } from '@yext/answers-headless-react';
 import { eventFieldMappings, isLinkedLocation, isTimeData } from './EventCard';
 import {
   isString,
@@ -18,7 +13,7 @@ import { distanceInKmBetweenCoordinates } from '../utils/distanceUtils';
 import ReactDOM from 'react-dom';
 import { renderEventPopup } from '../utils/renderEventPopup';
 import { MapActionTypes, MapContext } from './MapContext';
-import { updateLocationIfNeeded } from '@yext/answers-react-components';
+import { getUserLocation } from '@yext/answers-react-components';
 import { OverlayState } from './TopOverlay';
 
 mapboxgl.accessToken = process.env.REACT_APP_MAPBOX_ACCESS_TOKEN as string;
@@ -83,8 +78,6 @@ const EventsMap = (): JSX.Element => {
               'icon-image': 'custom-marker',
             },
           });
-
-          updateAnswersLocation();
         }
       );
 
@@ -106,6 +99,16 @@ const EventsMap = (): JSX.Element => {
         popupRef.current.remove();
       }
     });
+
+    getUserLocation()
+      .then((userLocation) => {
+        answersActions.setUserLocation(userLocation.coords);
+      })
+      .catch(() => {
+        // eslint-disable-next-line no-console
+        console.log('Could not get user location...defaulting to NYC');
+        answersActions.setUserLocation({ latitude: 40.73061, longitude: -73.935242 });
+      });
   }, []);
 
   useEffect(() => {
@@ -190,18 +193,9 @@ const EventsMap = (): JSX.Element => {
     }
   }, [state.selectedLocationId]);
 
-  const updateAnswersLocation = () => {
-    updateLocationIfNeeded(answersActions, [SearchIntent.NearMe]).then(() => {
-      userLocation?.latitude && userLocation.longitude
-        ? handleUserLocationSearch(userLocation.longitude, userLocation.latitude)
-        : // set default location for search as NYC if can't get user location
-          handleUserLocationSearch(-73.935242, 40.73061);
-    });
-  };
-
-  const handleUserLocationSearch = (lng: number, lat: number) => {
-    if (map.current) {
-      map.current.setCenter([lng, lat]);
+  useEffect(() => {
+    if (map.current && userLocation) {
+      map.current.setCenter([userLocation.longitude, userLocation.latitude]);
       answersActions.setStaticFilters([
         {
           fieldId: 'builtin.location',
@@ -229,7 +223,7 @@ const EventsMap = (): JSX.Element => {
         payload: { topOverlayState: OverlayState.None },
       });
     }
-  };
+  }, [userLocation]);
 
   const handleEventClick = (feature: mapboxgl.MapboxGeoJSONFeature) => {
     if (!map.current) return;
