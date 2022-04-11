@@ -4,6 +4,17 @@ import EventsMap from './components/EventsMap';
 import { MapProvider } from './components/MapContext';
 import { EventsOverlay } from './components/EventsOverlay';
 
+export const answersSandboxEndpoints = {
+  universalSearch: 'https://liveapi-sandbox.yext.com/v2/accounts/me/answers/query?someparam=blah',
+  verticalSearch: 'https://liveapi-sandbox.yext.com/v2/accounts/me/answers/vertical/query',
+  questionSubmission: 'https://liveapi-sandbox.yext.com/v2/accounts/me/createQuestion',
+  status: 'https://answersstatus.pagescdn.com',
+  universalAutocomplete: 'https://liveapi-sandbox.yext.com/v2/accounts/me/answers/autocomplete',
+  verticalAutocomplete:
+    'https://liveapi-sandbox.yext.com/v2/accounts/me/answers/vertical/autocomplete',
+  filterSearch: 'https://liveapi-sandbox.yext.com/v2/accounts/me/answers/filtersearch',
+};
+
 function App() {
   return (
     <div className="font-primary">
@@ -12,18 +23,7 @@ function App() {
         experienceKey="concerts-finder"
         locale="en"
         verticalKey="events"
-        endpoints={{
-          universalSearch:
-            'https://liveapi-sandbox.yext.com/v2/accounts/me/answers/query?someparam=blah',
-          verticalSearch: 'https://liveapi-sandbox.yext.com/v2/accounts/me/answers/vertical/query',
-          questionSubmission: 'https://liveapi-sandbox.yext.com/v2/accounts/me/createQuestion',
-          status: 'https://answersstatus.pagescdn.com',
-          universalAutocomplete:
-            'https://liveapi-sandbox.yext.com/v2/accounts/me/answers/autocomplete',
-          verticalAutocomplete:
-            'https://liveapi-sandbox.yext.com/v2/accounts/me/answers/vertical/autocomplete',
-          filterSearch: 'https://liveapi-sandbox.yext.com/v2/accounts/me/answers/filtersearch',
-        }}
+        endpoints={answersSandboxEndpoints}
       >
         <MapProvider>
           <EventsMap />

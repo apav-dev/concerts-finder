@@ -36,8 +36,6 @@ const EventsMap = (): JSX.Element => {
   const answersActions = useAnswersActions();
 
   useEffect(() => {
-    updateLocationIfNeeded(answersActions, [SearchIntent.NearMe]);
-
     if (map.current) return; // initialize map only once
     map.current = new mapboxgl.Map({
       container: mapContainer.current || '',
@@ -85,6 +83,8 @@ const EventsMap = (): JSX.Element => {
               'icon-image': 'custom-marker',
             },
           });
+
+          updateAnswersLocation();
         }
       );
 
@@ -107,37 +107,6 @@ const EventsMap = (): JSX.Element => {
       }
     });
   }, []);
-
-  useEffect(() => {
-    if (map.current && userLocation) {
-      map.current.setCenter([userLocation.longitude, userLocation.latitude]);
-      answersActions.setStaticFilters([
-        {
-          fieldId: 'builtin.location',
-          selected: true,
-          matcher: Matcher.Near,
-          value: {
-            radius:
-              1000 *
-              distanceInKmBetweenCoordinates(
-                map.current.getCenter().lat,
-                map.current.getCenter().lng,
-                map.current.getBounds().getNorthEast().lat,
-                map.current.getCenter().lng
-              ),
-            lat: map.current.getCenter().lat as number,
-            lng: map.current.getCenter().lng as number,
-          },
-        },
-      ]);
-      answersActions.executeVerticalQuery();
-      dispatch({
-        type: MapActionTypes.SetTopOverlayState,
-        payload: { topOverlayState: OverlayState.None },
-      });
-      answersActions.setStaticFilters([]);
-    }
-  }, [userLocation]);
 
   useEffect(() => {
     dispatch({
@@ -220,6 +189,47 @@ const EventsMap = (): JSX.Element => {
       feature && handleEventClick(feature);
     }
   }, [state.selectedLocationId]);
+
+  const updateAnswersLocation = () => {
+    updateLocationIfNeeded(answersActions, [SearchIntent.NearMe]).then(() => {
+      userLocation?.latitude && userLocation.longitude
+        ? handleUserLocationSearch(userLocation.longitude, userLocation.latitude)
+        : // set default location for search as NYC if can't get user location
+          handleUserLocationSearch(-73.935242, 40.73061);
+    });
+  };
+
+  const handleUserLocationSearch = (lng: number, lat: number) => {
+    if (map.current) {
+      map.current.setCenter([lng, lat]);
+      answersActions.setStaticFilters([
+        {
+          fieldId: 'builtin.location',
+          selected: true,
+          matcher: Matcher.Near,
+          value: {
+            radius:
+              1000 *
+              distanceInKmBetweenCoordinates(
+                map.current.getCenter().lat,
+                map.current.getCenter().lng,
+                map.current.getBounds().getNorthEast().lat,
+                map.current.getCenter().lng
+              ),
+            lat: map.current.getCenter().lat as number,
+            lng: map.current.getCenter().lng as number,
+          },
+        },
+      ]);
+      answersActions.executeVerticalQuery();
+      answersActions.setStaticFilters([]);
+
+      dispatch({
+        type: MapActionTypes.SetTopOverlayState,
+        payload: { topOverlayState: OverlayState.None },
+      });
+    }
+  };
 
   const handleEventClick = (feature: mapboxgl.MapboxGeoJSONFeature) => {
     if (!map.current) return;
