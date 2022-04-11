@@ -192,10 +192,15 @@ const EventsMap = (): JSX.Element => {
 
   const updateAnswersLocation = () => {
     updateLocationIfNeeded(answersActions, [SearchIntent.NearMe]).then(() => {
-      userLocation?.latitude && userLocation.longitude
-        ? handleUserLocationSearch(userLocation.longitude, userLocation.latitude)
-        : // set default location for search as NYC if can't get user location
-          handleUserLocationSearch(-73.935242, 40.73061);
+      if (userLocation?.latitude && userLocation?.longitude) {
+        // eslint-disable-next-line no-console
+        console.log('Search for events near user location');
+        handleUserLocationSearch(userLocation.longitude, userLocation.latitude);
+      } else {
+        // eslint-disable-next-line no-console
+        console.log('Cant access user location...defaulting to NYC');
+        handleUserLocationSearch(-73.935242, 40.73061);
+      }
     });
   };
 
