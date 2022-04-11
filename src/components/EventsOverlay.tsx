@@ -130,7 +130,7 @@ export const EventsOverlay = (): JSX.Element => {
           className={classNames('absolute top-0 h-px bg-gray-200 flex mt-2 ml-8 z-10 font-primary')}
         >
           {(facets) =>
-            facets.map((f, i) => {
+            facets.map((f, _i) => {
               if (f.options.length === 0) {
                 return null;
               }
