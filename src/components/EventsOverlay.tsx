@@ -87,7 +87,12 @@ export const EventsOverlay = (): JSX.Element => {
           {eventsCount > 0 && (
             <VerticalResults
               CardComponent={EventCard}
-              customCssClasses={{ container: 'p-4' }}
+              customCssClasses={{
+                container:
+                  'flex justify-center absolute bottom-0 bg-backgroundGray w-full shadow-top mb-0',
+                labelContainer: 'inline-flex shadow-sm -space-x-px py-2',
+              }}
+              cssCompositionMethod="assign"
               allowPagination={true}
             />
           )}
@@ -154,7 +159,7 @@ export const EventsOverlay = (): JSX.Element => {
                           value={o.value as string}
                           fieldId={f.fieldId}
                           customCssClasses={{
-                            container: 'flex items-center space-x-3 ml-2',
+                            container: 'flex items-center space-x-3 ml-2 ',
                             label: 'text-sm font-normal cursor-pointer',
                             input:
                               'w-3.5 h-3.5 form-checkbox cursor-pointer border border-gray-300 rounded-sm text-fontPink focus:ring-fontPink',
