@@ -1,23 +1,18 @@
 import ScaleLoader from 'react-spinners/ScaleLoader';
+import { OverlayStatus } from '../providers/OverlayProvider';
 import { SpotifyLoginModal } from './SpotifyLoginModal';
 
-export enum OverlayState {
-  None = 'none',
-  Spotify = 'spotify',
-  Loading = 'loading',
-}
-
 interface TopOverlayScreenProps {
-  overlayType: OverlayState;
+  overlayType: OverlayStatus;
 }
 
 const TopOverlay = ({ overlayType }: TopOverlayScreenProps) => (
   <>
-    {overlayType !== OverlayState.None && (
+    {overlayType !== OverlayStatus.None && (
       <div className="absolute flex justify-center items-center bg-black opacity-90 top-0 right-0 left-0 bottom-0 z-20">
         <div className="flex flex-col items-center">
-          {overlayType === OverlayState.Spotify && SpotifyLoginModal()}
-          {overlayType === OverlayState.Loading && (
+          {overlayType === OverlayStatus.Spotify && SpotifyLoginModal()}
+          {overlayType === OverlayStatus.Loading && (
             <div className="flex flex-col items-center">
               <ScaleLoader color="#ee4c7c" width={15} height={120} />
               <span className="text-white text-xl font-extrabold">

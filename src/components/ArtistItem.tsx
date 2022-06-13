@@ -6,9 +6,9 @@ import {
 } from '@yext/answers-react-components/lib/components/utils/validateData';
 import { isArray } from './EventCard';
 import { BiPlayCircle } from 'react-icons/bi';
-import { MapActionTypes, MapContext } from './MapContext';
 import { useContext } from 'react';
-import { OverlayState } from './TopOverlay';
+import { SpotifyActionTypes, SpotifyContext } from '../providers/SpotifyProvider';
+import { OverlayActionTypes, OverlayContext, OverlayStatus } from '../providers/OverlayProvider';
 
 export interface Artist {
   name: string;
@@ -77,7 +77,8 @@ export const eventFieldMappings: Record<string, FieldData> = {
 const ArtistItem = ({ artist }: ArtistCardProps): JSX.Element => {
   const transformedFieldData = applyFieldMappings(artist, eventFieldMappings);
 
-  const { state, dispatch } = useContext(MapContext);
+  const spotifyContext = useContext(SpotifyContext);
+  const overlayContext = useContext(OverlayContext);
 
   const artistData = validateData(transformedFieldData, {
     name: isString,
@@ -87,15 +88,15 @@ const ArtistItem = ({ artist }: ArtistCardProps): JSX.Element => {
   });
 
   const handlePlayClick = () => {
-    if (!state.spotifyAccessToken) {
-      dispatch({
-        type: MapActionTypes.SetTopOverlayState,
-        payload: { topOverlayState: OverlayState.Spotify },
+    if (!spotifyContext.spotifyState.spotifyAccessToken) {
+      overlayContext.dispatch({
+        type: OverlayActionTypes.SetTopOverlayState,
+        payload: { topOverlayState: OverlayStatus.Spotify },
       });
     }
 
-    dispatch({
-      type: MapActionTypes.SetArtistSpotifyId,
+    spotifyContext.dispatch({
+      type: SpotifyActionTypes.SetArtistSpotifyId,
       payload: { artistSpotifyId: artistData.spotifyId || '' },
     });
   };

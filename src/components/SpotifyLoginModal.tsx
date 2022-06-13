@@ -1,14 +1,13 @@
 import { useContext } from 'react';
-import { MapActionTypes, MapContext } from './MapContext';
-import { OverlayState } from './TopOverlay';
+import { OverlayActionTypes, OverlayContext, OverlayStatus } from '../providers/OverlayProvider';
 
 export const SpotifyLoginModal = () => {
-  const { state, dispatch } = useContext(MapContext);
+  const overlayContext = useContext(OverlayContext);
 
   const handleCloseTopOverlay = () => {
-    dispatch({
-      type: MapActionTypes.SetTopOverlayState,
-      payload: { topOverlayState: OverlayState.None },
+    overlayContext.dispatch({
+      type: OverlayActionTypes.SetTopOverlayState,
+      payload: { topOverlayState: OverlayStatus.None },
     });
   };
 

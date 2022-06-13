@@ -1,11 +1,11 @@
 @font-face {
   font-family: 'Inter';
-  src: url(./fonts/Inter-VariableFont.ttf);
+  src: url(assets/fonts/Inter-VariableFont.ttf);
 }
 
 @font-face {
   font-family: 'MavenPro';
-  src: url(./fonts/MavenPro-VariableFont_wght.ttf);
+  src: url(assets/fonts/MavenPro-VariableFont_wght.ttf);
 }
 
 @tailwind base;

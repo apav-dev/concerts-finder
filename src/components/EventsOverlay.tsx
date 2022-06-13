@@ -3,11 +3,12 @@ import { Filters, SearchBar, SpellCheck, VerticalResults } from '@yext/answers-r
 import classNames from 'classnames';
 import { useContext, useEffect, useRef, useState } from 'react';
 import { BiCaretLeft } from 'react-icons/bi';
+import { OverlayActionTypes, OverlayContext, OverlayStatus } from '../providers/OverlayProvider';
+import { SpotifyActionTypes, SpotifyContext } from '../providers/SpotifyProvider';
 import EventCard from './EventCard';
-import { MapActionTypes, MapContext } from './MapContext';
 import { MapFilterCollapsibleLabel } from './MapFilterCollapsibleLabel';
 import { SpotifyPlayer } from './SpotifyPlayer';
-import TopOverlay, { OverlayState } from './TopOverlay';
+import TopOverlay from './TopOverlay';
 
 export const EventsOverlay = (): JSX.Element => {
   const resultsContainer = useRef<HTMLDivElement>(null);
@@ -16,9 +17,11 @@ export const EventsOverlay = (): JSX.Element => {
   const [showSearchPanel, setShowSearchPanel] = useState(true);
   const [scrollAtTop, setScrollAtTop] = useState(true);
 
-  const { state, dispatch } = useContext(MapContext);
+  const spotifyContext = useContext(SpotifyContext);
+  const overlayContext = useContext(OverlayContext);
 
   const eventsCount = useAnswersState((state) => state.vertical.resultsCount) || 0;
+  const mostRecentSearch = useAnswersState((state) => state.query.mostRecentSearch);
 
   useEffect(() => {
     async function getToken() {
@@ -26,8 +29,8 @@ export const EventsOverlay = (): JSX.Element => {
       const json = await response.json();
 
       if (json.access_token) {
-        dispatch({
-          type: MapActionTypes.SetSpotifyAccessToken,
+        spotifyContext.dispatch({
+          type: SpotifyActionTypes.SetSpotifyAccessToken,
           payload: { spotifyAccessToken: json.access_token },
         });
       }
@@ -39,7 +42,10 @@ export const EventsOverlay = (): JSX.Element => {
   useEffect(() => {
     if (sidePanel.current) {
       const sidePanelWidth = showSearchPanel ? sidePanel.current.clientWidth : 0;
-      dispatch({ type: MapActionTypes.SetSidePanelWidth, payload: { sidePanelWidth } });
+      overlayContext.dispatch({
+        type: OverlayActionTypes.SetSidePanelWidth,
+        payload: { sidePanelWidth },
+      });
     }
   }, [showSearchPanel]);
 
@@ -48,24 +54,30 @@ export const EventsOverlay = (): JSX.Element => {
 
   return (
     <div>
-      <TopOverlay overlayType={state.topOverlayState} />
+      <TopOverlay overlayType={overlayContext.overlayState.topOverlayStatus} />
       <div
         ref={sidePanel}
         className={classNames(
           'absolute w-96 top-0 bottom-0 bg-backgroundGray z-10',
           {
-            'bg-transparent': state.topOverlayState === OverlayState.Loading,
+            'bg-transparent':
+              overlayContext.overlayState.topOverlayStatus === OverlayStatus.Loading,
           },
           { 'left-0': showSearchPanel },
           { '-left-96': !showSearchPanel }
         )}
         style={{ transition: 'left 0.1s linear' }}
       >
-        <div className={classNames(' flex items-center px-4', { 'shadow-bottom': !scrollAtTop })}>
+        <div
+          className={classNames(' absolute w-96  flex items-center px-4', {
+            'shadow-bottom': !scrollAtTop,
+          })}
+        >
           <SearchBar
             // TODO: ask about vertical divider
             customCssClasses={{
               container: 'my-2 w-full font-primary text-sm',
+              dropdownContainer: 'bg-cardGray  pb-3 z-10',
               inputDropdownContainer:
                 'relative z-10 border rounded-lg border-gray-200 w-full overflow-hidden shadow-lg bg-cardGray',
               inputElement: 'outline-none flex-grow border-none h-full pl-0.5 pr-2 bg-cardGray',
@@ -75,7 +87,7 @@ export const EventsOverlay = (): JSX.Element => {
         </div>
         <div
           ref={resultsContainer}
-          className="overflow-y-scroll flex flex-col"
+          className="overflow-y-scroll flex flex-col absolute top-16"
           // TODO: see if there's a better way of doing this
           style={{
             maxHeight: sidePanel.current?.clientHeight
@@ -89,16 +101,17 @@ export const EventsOverlay = (): JSX.Element => {
               CardComponent={EventCard}
               customCssClasses={{
                 container:
-                  'flex justify-center absolute bottom-0 bg-backgroundGray w-full shadow-top mb-0',
+                  'flex justify-center absolute top-0  bg-backgroundGray w-full shadow-top mb-0',
                 labelContainer: 'inline-flex shadow-sm -space-x-px py-2',
               }}
               cssCompositionMethod="assign"
-              allowPagination={true}
+              allowPagination={false}
             />
           )}
-          {eventsCount === 0 && state.topOverlayState !== OverlayState.Loading && (
-            <span className="px-4">{`No search results found for ${state.lastSearchInput}`}</span>
-          )}
+          {eventsCount === 0 &&
+            overlayContext.overlayState.topOverlayStatus !== OverlayStatus.Loading && (
+              <span className="px-4">{`No search results found for ${mostRecentSearch}`}</span>
+            )}
           <SpellCheck
             customCssClasses={{
               container: 'text-md',
@@ -108,7 +121,7 @@ export const EventsOverlay = (): JSX.Element => {
             cssCompositionMethod="assign"
           />
         </div>
-        {state.topOverlayState !== OverlayState.Loading && (
+        {overlayContext.overlayState.topOverlayStatus !== OverlayStatus.Loading && (
           <div className={'left-96 absolute top-0 bottom-0 flex flex-col justify-center '}>
             <button
               className="w-5 h-11 bg-backgroundGray rounded-r-md"
@@ -175,15 +188,16 @@ export const EventsOverlay = (): JSX.Element => {
           }
         </Filters.Facets>
       </div>
-      {state.spotifyAccessToken && state.artistSpotifyId && (
-        <SpotifyPlayer
-          accessToken={state.spotifyAccessToken}
-          artistId={state.artistSpotifyId}
-          onClosePlayerClick={() =>
-            dispatch({ type: MapActionTypes.ClearArtistSpotifyId, payload: undefined })
-          }
-        />
-      )}
+      {spotifyContext.spotifyState.spotifyAccessToken &&
+        spotifyContext.spotifyState.artistSpotifyId && (
+          <SpotifyPlayer
+            accessToken={spotifyContext.spotifyState.spotifyAccessToken}
+            artistId={spotifyContext.spotifyState.artistSpotifyId}
+            onClosePlayerClick={() =>
+              spotifyContext.dispatch({ type: SpotifyActionTypes.ClearArtistSpotifyId })
+            }
+          />
+        )}
     </div>
   );
 };

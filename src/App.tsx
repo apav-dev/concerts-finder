@@ -1,8 +1,8 @@
 import './App.css';
 import { AnswersHeadlessProvider } from '@yext/answers-headless-react';
 import EventsMap from './components/EventsMap';
-import { MapProvider } from './components/MapContext';
 import { EventsOverlay } from './components/EventsOverlay';
+import { AppContextProvider } from './providers/AppContextProvider';
 
 export const answersSandboxEndpoints = {
   universalSearch: 'https://liveapi-sandbox.yext.com/v2/accounts/me/answers/query?someparam=blah',
@@ -25,10 +25,10 @@ function App() {
         verticalKey="events"
         endpoints={answersSandboxEndpoints}
       >
-        <MapProvider>
+        <AppContextProvider>
           <EventsMap />
           <EventsOverlay />
-        </MapProvider>
+        </AppContextProvider>
       </AnswersHeadlessProvider>
     </div>
   );

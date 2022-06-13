@@ -12,9 +12,9 @@ import { FeatureCollection, Point } from 'geojson';
 import { distanceInKmBetweenCoordinates } from '../utils/distanceUtils';
 import ReactDOM from 'react-dom';
 import { renderEventPopup } from '../utils/renderEventPopup';
-import { MapActionTypes, MapContext } from './MapContext';
 import { getUserLocation } from '@yext/answers-react-components';
-import { OverlayState } from './TopOverlay';
+import { MapContext } from '../providers/MapProvider';
+import { OverlayActionTypes, OverlayContext, OverlayStatus } from '../providers/OverlayProvider';
 
 mapboxgl.accessToken = process.env.REACT_APP_MAPBOX_ACCESS_TOKEN as string;
 
@@ -23,9 +23,9 @@ const EventsMap = (): JSX.Element => {
   const map = useRef<Map | null>(null);
   const popupRef = useRef(new mapboxgl.Popup({ offset: 15 }));
 
-  const { state, dispatch } = useContext(MapContext);
+  const mapContext = useContext(MapContext);
+  const overlayContext = useContext(OverlayContext);
 
-  const queryInput = useAnswersState((state) => state.query.input);
   const userLocation = useAnswersState((state) => state.location.userLocation);
   const events = useAnswersState((state) => state.vertical.results);
   const answersActions = useAnswersActions();
@@ -112,11 +112,6 @@ const EventsMap = (): JSX.Element => {
   }, []);
 
   useEffect(() => {
-    dispatch({
-      type: MapActionTypes.SetLastSearchInput,
-      payload: { lastSearchInput: queryInput || '' },
-    });
-
     if (map.current && events) {
       const validatedEvents = events.map((event) => {
         const transformedFieldData = applyFieldMappings(event.rawData, eventFieldMappings);
@@ -171,7 +166,12 @@ const EventsMap = (): JSX.Element => {
         if (!bounds.isEmpty()) {
           map.current.setCenter(bounds.getCenter());
           map.current.fitBounds(bounds, {
-            padding: { top: 30, bottom: 30, left: 30 + state.sidePanelWidth, right: 30 },
+            padding: {
+              top: 30,
+              bottom: 30,
+              left: 30 + overlayContext.overlayState.sidePanelWidth,
+              right: 30,
+            },
             maxZoom: 15,
           });
         }
@@ -183,15 +183,15 @@ const EventsMap = (): JSX.Element => {
     if (!map.current) return;
     const currentMap = map.current;
 
-    if (state.selectedLocationId) {
+    if (mapContext.mapState.selectedLocationId) {
       const eventLocationFeatures = currentMap.querySourceFeatures('eventLocations');
       const feature = eventLocationFeatures.find(
-        (feature) => feature.id?.toString() === state.selectedLocationId
+        (feature) => feature.id?.toString() === mapContext.mapState.selectedLocationId
       );
 
       feature && handleEventClick(feature);
     }
-  }, [state.selectedLocationId]);
+  }, [mapContext.mapState.selectedLocationId]);
 
   useEffect(() => {
     if (map.current && userLocation) {
@@ -218,9 +218,9 @@ const EventsMap = (): JSX.Element => {
       answersActions.executeVerticalQuery();
       answersActions.setStaticFilters([]);
 
-      dispatch({
-        type: MapActionTypes.SetTopOverlayState,
-        payload: { topOverlayState: OverlayState.None },
+      overlayContext.dispatch({
+        type: OverlayActionTypes.SetTopOverlayState,
+        payload: { topOverlayState: OverlayStatus.None },
       });
     }
   }, [userLocation]);

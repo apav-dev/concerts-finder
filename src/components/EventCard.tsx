@@ -8,7 +8,7 @@ import { useContext, useEffect, useState } from 'react';
 import { BiCaretUpCircle, BiChevronLeft, BiChevronRight } from 'react-icons/bi';
 import classNames from 'classnames';
 import ArtistItem, { YextPhoto } from './ArtistItem';
-import { MapActionTypes, MapContext } from './MapContext';
+import { MapActionTypes, MapContext } from '../providers/MapProvider';
 
 export interface LinkedLocation {
   name: string;
@@ -130,7 +130,7 @@ const EventCard = (props: StandardCardProps): JSX.Element => {
   const [artistPageNum, setArtistPageNum] = useState(1);
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { state, dispatch } = useContext(MapContext);
+  const mapContext = useContext(MapContext);
 
   useEffect(() => {
     data.artists && setArtistPageCount(Math.ceil(data.artists.length / 4));
@@ -201,7 +201,7 @@ const EventCard = (props: StandardCardProps): JSX.Element => {
 
   const handleCardClick = () => {
     if (data.linkedLocation?.yextDisplayCoordinate) {
-      dispatch({
+      mapContext.dispatch({
         type: MapActionTypes.SetSelectedLocation,
         payload: { selectedLocationId: data.id || '' },
       });
