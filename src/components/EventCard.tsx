@@ -1,130 +1,14 @@
-import { FieldData, StandardCardProps } from '@yext/answers-react-components';
-import { applyFieldMappings } from '@yext/answers-react-components/lib/components/utils/applyFieldMappings';
-import {
-  isString,
-  validateData,
-} from '@yext/answers-react-components/lib/components/utils/validateData';
+import { CardProps } from '@yext/answers-react-components';
 import { useContext, useEffect, useState } from 'react';
 import { BiCaretUpCircle, BiChevronLeft, BiChevronRight } from 'react-icons/bi';
 import classNames from 'classnames';
-import ArtistItem, { YextPhoto } from './ArtistItem';
 import { MapActionTypes, MapContext } from '../providers/MapProvider';
-
-export interface LinkedLocation {
-  name: string;
-  yextDisplayCoordinate: YextDisplayCoordinate;
-  address: Address;
-  photoGallery?: YextPhoto[];
-}
-
-export interface YextDisplayCoordinate {
-  longitude: number;
-  latitude: number;
-}
-
-export interface YextTimeData {
-  start: string;
-  end: string;
-}
-
-export interface Address {
-  line1: string;
-  city: string;
-  region: string;
-  postalCode: string;
-}
-
-export function isTimeData(data: unknown): data is YextTimeData {
-  if (typeof data !== 'object' || data === null) {
-    return false;
-  }
-  const expectedKeys = ['start', 'end'];
-  return expectedKeys.every((key) => {
-    return key in data;
-  });
-}
-
-export function isArray(data: unknown): data is [] {
-  if (!Array.isArray(data) || data === null) {
-    return false;
-  }
-
-  return true;
-}
-
-function isCoordinateData(data: unknown): data is YextDisplayCoordinate {
-  if (typeof data !== 'object' || data === null) {
-    return false;
-  }
-
-  const expectedKeys = ['longitude', 'latitude'];
-  return expectedKeys.every((key) => {
-    return key in data;
-  });
-}
-
-function isAddress(data: unknown): data is Address {
-  if (typeof data !== 'object' || data === null) {
-    return false;
-  }
-
-  const expectedKeys = ['line1', 'city', 'region', 'postalCode'];
-  return expectedKeys.every((key) => {
-    return key in data;
-  });
-}
-
-export function isLinkedLocation(data: unknown): data is LinkedLocation {
-  if (typeof data !== 'object' || data === null) {
-    return false;
-  }
-
-  const expectedKeys = ['name', 'yextDisplayCoordinate', 'address'];
-  const containsExpectedKeys = expectedKeys.every((key) => {
-    return key in data;
-  });
-
-  return (
-    containsExpectedKeys &&
-    isCoordinateData((data as LinkedLocation).yextDisplayCoordinate) &&
-    isAddress((data as LinkedLocation).address)
-  );
-}
-
-export const eventFieldMappings: Record<string, FieldData> = {
-  id: {
-    mappingType: 'FIELD',
-    apiName: 'id',
-  },
-  title: {
-    mappingType: 'FIELD',
-    apiName: 'name',
-  },
-  venueName: {
-    mappingType: 'FIELD',
-    apiName: 'venueName',
-  },
-  dateTime: {
-    mappingType: 'FIELD',
-    apiName: 'time',
-  },
-  artists: {
-    mappingType: 'FIELD',
-    apiName: 'c_artists',
-  },
-  lowestPrice: {
-    mappingType: 'FIELD',
-    apiName: 'c_lowestPrice',
-  },
-  linkedLocation: {
-    mappingType: 'FIELD',
-    apiName: 'linkedLocation',
-  },
-};
+import { eventDataForRender } from '../types/Event';
+import ArtistItem from './ArtistItem';
 
 type DrawerState = 'none' | 'open' | 'closed';
 
-const EventCard = (props: StandardCardProps): JSX.Element => {
+const EventCard = (props: CardProps): JSX.Element => {
   const [drawerState, setDrawerState] = useState<DrawerState>('none');
   const [artistPageCount, setArtistPageCount] = useState(0);
   const [artistPageNum, setArtistPageNum] = useState(1);
@@ -132,21 +16,11 @@ const EventCard = (props: StandardCardProps): JSX.Element => {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const mapContext = useContext(MapContext);
 
+  const event = eventDataForRender(props.result);
+
   useEffect(() => {
-    data.artists && setArtistPageCount(Math.ceil(data.artists.length / 4));
+    event.artists && setArtistPageCount(Math.ceil(event.artists.length / 4));
   }, []);
-
-  const transformedFieldData = applyFieldMappings(props.result.rawData, eventFieldMappings);
-
-  const data = validateData(transformedFieldData, {
-    id: isString,
-    title: isString,
-    venueName: isString,
-    dateTime: isTimeData,
-    lowestPrice: isString,
-    artists: isArray,
-    linkedLocation: isLinkedLocation,
-  });
 
   const formatDate = (dateTime?: string) => {
     if (!dateTime) return;
@@ -200,10 +74,10 @@ const EventCard = (props: StandardCardProps): JSX.Element => {
   };
 
   const handleCardClick = () => {
-    if (data.linkedLocation?.yextDisplayCoordinate) {
+    if (event.linkedLocation?.yextDisplayCoordinate) {
       mapContext.dispatch({
         type: MapActionTypes.SetSelectedLocation,
-        payload: { selectedLocationId: data.id || '' },
+        payload: { selectedLocationId: event.id || '' },
       });
     }
   };
@@ -215,12 +89,14 @@ const EventCard = (props: StandardCardProps): JSX.Element => {
     >
       <div className="flex justify-between items-center ">
         <div>
-          <div className="flex text-sm text-fontPink">{data.title?.toUpperCase()}</div>
+          <div className="flex text-sm text-fontPink">{event.title?.toUpperCase()}</div>
           <div>
-            <div className="flex text-xs">{`${formatDate(data.dateTime?.start)}${
-              data.venueName
+            <div className="flex text-xs">{`${formatDate(event.dateTime?.start)}${
+              event.venueName
             }`}</div>
-            {data.lowestPrice && <div className="flex text-xs ">{`From $${data.lowestPrice}`}</div>}
+            {event.lowestPrice && (
+              <div className="flex text-xs ">{`From $${event.lowestPrice}`}</div>
+            )}
           </div>
         </div>
       </div>
@@ -232,7 +108,7 @@ const EventCard = (props: StandardCardProps): JSX.Element => {
         //TODO:  remove inline style
         style={{ transition: 'max-height 0.2s linear' }}
       >
-        {data.artists?.slice((artistPageNum - 1) * 4, artistPageNum * 4).map((artist, i) => (
+        {event.artists?.slice((artistPageNum - 1) * 4, artistPageNum * 4).map((artist, i) => (
           <ArtistItem key={i} artist={artist} />
         ))}
       </ul>

@@ -1,12 +1,6 @@
 import { useRef, useEffect, useContext } from 'react';
 import mapboxgl, { Map } from '!mapbox-gl'; // eslint-disable-line
 import { Matcher, useAnswersActions, useAnswersState } from '@yext/answers-headless-react';
-import { eventFieldMappings, isLinkedLocation, isTimeData } from './EventCard';
-import {
-  isString,
-  validateData,
-} from '@yext/answers-react-components/lib/components/utils/validateData';
-import { applyFieldMappings } from '@yext/answers-react-components/lib/components/utils/applyFieldMappings';
 import { GeoJSONSource } from 'mapbox-gl';
 import { FeatureCollection, Point } from 'geojson';
 import { distanceInKmBetweenCoordinates } from '../utils/distanceUtils';
@@ -15,6 +9,7 @@ import { renderEventPopup } from '../utils/renderEventPopup';
 import { getUserLocation } from '@yext/answers-react-components';
 import { MapContext } from '../providers/MapProvider';
 import { OverlayActionTypes, OverlayContext, OverlayStatus } from '../providers/OverlayProvider';
+import { eventDataForRender } from '../types/Event';
 
 mapboxgl.accessToken = process.env.REACT_APP_MAPBOX_ACCESS_TOKEN as string;
 
@@ -114,14 +109,7 @@ const EventsMap = (): JSX.Element => {
   useEffect(() => {
     if (map.current && events) {
       const validatedEvents = events.map((event) => {
-        const transformedFieldData = applyFieldMappings(event.rawData, eventFieldMappings);
-        return validateData(transformedFieldData, {
-          id: isString,
-          title: isString,
-          venueName: isString,
-          dateTime: isTimeData,
-          linkedLocation: isLinkedLocation,
-        });
+        return eventDataForRender(event);
       });
 
       const bounds = new mapboxgl.LngLatBounds();

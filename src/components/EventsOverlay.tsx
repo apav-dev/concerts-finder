@@ -100,8 +100,7 @@ export const EventsOverlay = (): JSX.Element => {
             <VerticalResults
               CardComponent={EventCard}
               customCssClasses={{
-                container:
-                  'flex justify-center absolute top-0  bg-backgroundGray w-full shadow-top mb-0',
+                results: 'justify-center  bg-backgroundGray w-full shadow-top mb-0',
                 labelContainer: 'inline-flex shadow-sm -space-x-px py-2',
               }}
               cssCompositionMethod="assign"
@@ -155,7 +154,7 @@ export const EventsOverlay = (): JSX.Element => {
 
               return (
                 <div key={f.fieldId} className="md:w-40 mr-4 ">
-                  <Filters.FilterGroup defaultExpanded={false}>
+                  <Filters.FilterGroup fieldId={f.fieldId} defaultExpanded={false}>
                     <MapFilterCollapsibleLabel
                       label={f.fieldId === 'c_artists.c_genres' ? 'Genres' : 'US Region'}
                     />
@@ -170,7 +169,6 @@ export const EventsOverlay = (): JSX.Element => {
                             .join(' ')}
                           // TODO: maybe ask dev team about this
                           value={o.value as string}
-                          fieldId={f.fieldId}
                           customCssClasses={{
                             container: 'flex items-center space-x-3 ml-2 ',
                             label: 'text-sm font-normal cursor-pointer',

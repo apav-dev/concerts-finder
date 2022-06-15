@@ -1,10 +1,13 @@
-import { CollapsibleLabelProps } from '@yext/answers-react-components/lib/components/Filters/CollapsibleLabel';
-import { useFilterGroupContext } from '@yext/answers-react-components/lib/components/Filters/FilterGroupContext';
+import { Filters } from '@yext/answers-react-components';
 import classNames from 'classnames';
 import { BiCaretUpCircle } from 'react-icons/bi';
 
-export function MapFilterCollapsibleLabel({ label }: CollapsibleLabelProps): JSX.Element {
-  const { isExpanded, getToggleProps } = useFilterGroupContext();
+interface MapFilterCollapsibleLabelProps {
+  label: string;
+}
+
+export function MapFilterCollapsibleLabel({ label }: MapFilterCollapsibleLabelProps): JSX.Element {
+  const { isExpanded, getToggleProps } = Filters.useFilterGroupContext();
   const iconClassName = classNames('w-6', {
     'transform rotate-180': !isExpanded,
   });

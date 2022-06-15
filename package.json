@@ -3,18 +3,20 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
-    "@emotion/react": "^11.9.0",
+    "@emotion/react": "^11.9.3",
     "@testing-library/jest-dom": "^5.16.4",
     "@testing-library/react": "^12.1.5",
     "@testing-library/user-event": "^13.5.0",
     "@types/jest": "^27.5.2",
     "@types/mapbox-gl": "^2.7.3",
-    "@types/node": "^16.11.39",
+    "@types/node": "^16.11.40",
     "@types/react": "^17.0.45",
     "@types/react-dom": "^17.0.17",
     "@types/spotify-web-playback-sdk": "^0.1.12",
-    "@yext/answers-react-components": "^0.1.0-beta.8",
+    "@yext/answers-headless-react": "^1.1.1",
+    "@yext/answers-react-components": "^0.1.2-alpha.16",
     "http-proxy-middleware": "^2.0.6",
+    "lodash": "^4.17.21",
     "mapbox-gl": "^2.8.2",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
@@ -55,13 +57,14 @@
   },
   "devDependencies": {
     "@tailwindcss/forms": "^0.5.2",
-    "@typescript-eslint/eslint-plugin": "^5.27.1",
-    "@typescript-eslint/parser": "^5.27.1",
+    "@types/lodash": "^4.14.182",
+    "@typescript-eslint/eslint-plugin": "^5.28.0",
+    "@typescript-eslint/parser": "^5.28.0",
     "eslint": "^8.17.0",
     "eslint-config-prettier": "^8.5.0",
     "eslint-plugin-prettier": "^4.0.0",
     "eslint-plugin-react": "^7.30.0",
-    "prettier": "^2.6.2",
-    "tailwindcss": "^3.1.2"
+    "prettier": "^2.7.0",
+    "tailwindcss": "^3.1.3"
   }
 }
